@@ -1,0 +1,4335 @@
+<title>__TITLE__</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --paper: #EEF1F4;
+    --paper-raised: #FFFFFF;
+    --paper-sunken: #E4E9ED;
+    --ink: #16202B;
+    --ink-soft: #4B5B6B;
+    --ink-faint: #7C8B99;
+    --line: #C7D0D8;
+    --line-soft: #DBE1E7;
+    --accent: #A85D3B;
+    --accent-soft: rgba(168, 93, 59, 0.12);
+    --added: #2E7D5B;
+    --added-bg: rgba(46, 125, 91, 0.10);
+    --added-line-bg: rgba(46, 125, 91, 0.16);
+    --removed: #B23A3A;
+    --removed-bg: rgba(178, 58, 58, 0.10);
+    --removed-line-bg: rgba(178, 58, 58, 0.14);
+    --status-open: #3B6FA0;
+    --status-open-bg: rgba(59, 111, 160, 0.12);
+    --status-answered: #B8862E;
+    --status-answered-bg: rgba(184, 134, 46, 0.14);
+    --shadow: rgba(22, 32, 43, 0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0F1620;
+      --paper-raised: #16202C;
+      --paper-sunken: #0B1119;
+      --ink: #DCE4EA;
+      --ink-soft: #8FA3B3;
+      --ink-faint: #607283;
+      --line: #24313D;
+      --line-soft: #1C2830;
+      --accent: #E08A54;
+      --accent-soft: rgba(224, 138, 84, 0.14);
+      --added: #5FBF8F;
+      --added-bg: rgba(95, 191, 143, 0.10);
+      --added-line-bg: rgba(95, 191, 143, 0.14);
+      --removed: #E07575;
+      --removed-bg: rgba(224, 117, 117, 0.10);
+      --removed-line-bg: rgba(224, 117, 117, 0.14);
+      --status-open: #7FB0DE;
+      --status-open-bg: rgba(127, 176, 222, 0.14);
+      --status-answered: #D9A548;
+      --status-answered-bg: rgba(217, 165, 72, 0.16);
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #0F1620;
+    --paper-raised: #16202C;
+    --paper-sunken: #0B1119;
+    --ink: #DCE4EA;
+    --ink-soft: #8FA3B3;
+    --ink-faint: #607283;
+    --line: #24313D;
+    --line-soft: #1C2830;
+    --accent: #E08A54;
+    --accent-soft: rgba(224, 138, 84, 0.14);
+    --added: #5FBF8F;
+    --added-bg: rgba(95, 191, 143, 0.10);
+    --added-line-bg: rgba(95, 191, 143, 0.14);
+    --removed: #E07575;
+    --removed-bg: rgba(224, 117, 117, 0.10);
+    --removed-line-bg: rgba(224, 117, 117, 0.14);
+    --status-open: #7FB0DE;
+    --status-open-bg: rgba(127, 176, 222, 0.14);
+    --status-answered: #D9A548;
+    --status-answered-bg: rgba(217, 165, 72, 0.16);
+    --shadow: rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    /* Acompanha a janela: em telas largas o diff usa o espaço, sem esticar
+       ao infinito. A prosa mantém medida legível via max-width em ch. */
+    width: 100%;
+    max-width: min(1760px, 94vw);
+    margin: 0 auto;
+    padding: 3.5rem clamp(1rem, 2vw, 2.5rem) 6rem;
+  }
+
+  /* ===== Masthead ===== */
+
+  .masthead {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.9rem;
+  }
+
+  h1 {
+    font-size: clamp(2.1rem, 4vw, 2.9rem);
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  .lede {
+    max-width: 62ch;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0 0 1.75rem;
+  }
+
+  .lede code, .patch-why code, .category-note code, footer code {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--paper-sunken);
+    padding: 0.05rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.92em;
+  }
+
+  /* Barra de controles fixa no topo durante a rolagem. Fica FORA do
+     <header> porque sticky só vale enquanto o pai está em vista. */
+  .toolbar-bar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    /* sangra até as bordas da página para o fundo cobrir a rolagem */
+    margin: 0 calc(-1 * clamp(1rem, 2vw, 2.5rem)) 2rem;
+    padding: 0.7rem clamp(1rem, 2vw, 2.5rem);
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* sombra só quando a barra está colada, para dar profundidade sem poluir */
+  .toolbar-bar.stuck { box-shadow: 0 6px 16px -8px var(--shadow); }
+
+  .masthead { margin-bottom: 0; border-bottom: none; padding-bottom: 1.2rem; }
+
+  .masthead-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  /* âncoras não podem parar embaixo da barra fixa */
+  .patch { scroll-margin-top: 5.5rem; }
+  .hunk { scroll-margin-top: 6rem; }
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  /* ===== Toolbar do diff ===== */
+
+  .diff-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .tb-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.45rem;
+    background: var(--paper-raised);
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .tb-icon:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+  .tb-icon[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .tb-icon:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .tb-group { display: inline-flex; }
+  .tb-group .tb-icon { border-radius: 0; }
+  .tb-group .tb-icon:first-child { border-radius: 6px 0 0 6px; }
+  .tb-group .tb-icon:last-child { border-radius: 0 6px 6px 0; border-left-width: 0; }
+  .tb-group .tb-icon:last-child[aria-pressed="true"] { border-left-width: 1px; }
+
+  /* busca no código */
+  .tb-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+
+  .tb-search input {
+    width: 12rem;
+    max-width: 34vw;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.8rem;
+  }
+
+  .tb-search input:focus { outline: none; }
+  .tb-search input::placeholder { color: var(--ink-faint); }
+
+  .tb-search-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .tb-search .tb-mini {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0 0.15rem;
+    line-height: 1;
+  }
+
+  .tb-search .tb-mini:hover:not(:disabled) { color: var(--accent); }
+  .tb-search .tb-mini:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* dropdown de modo de visualização */
+  .tb-select { position: relative; }
+
+  .tb-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2rem;
+    padding: 0 0.7rem;
+    background: var(--paper-raised);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .tb-view-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tb-view-btn .caret { color: var(--ink-faint); font-weight: 400; }
+
+  .tb-menu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    z-index: 30;
+    min-width: 13rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px var(--shadow);
+    padding: 0.3rem;
+    display: none;
+    flex-direction: column;
+  }
+
+  .tb-menu.open { display: flex; }
+
+  .tb-menu button {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0.6rem;
+    background: none;
+    border: none;
+    border-radius: 5px;
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .tb-menu button:hover { background: var(--paper-sunken); color: var(--ink); }
+  .tb-menu button[aria-checked="true"] { color: var(--accent); font-weight: 600; }
+  .tb-menu button .mi { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; width: 1.1rem; text-align: center; }
+
+  .tb-menu button .mi-note {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.64rem;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0 0.3rem;
+  }
+
+  .tb-menu button .mi-count {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+  }
+
+  /* ===== Colapsar card / seção ===== */
+
+  .patch-collapse {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0 0.3rem;
+    line-height: 1;
+  }
+
+  .patch-collapse:hover { color: var(--accent); }
+
+  /* Colapsado: some o diff e a discussão, sobra o cabeçalho e o "por quê" */
+  .patch.collapsed .diffbody,
+  .patch.collapsed .discussion,
+  .patch.collapsed .diff-note,
+  .patch.collapsed .file-removed-block { display: none; }
+
+  .patch.collapsed .patch-why { padding-bottom: 0.85rem; }
+
+  /* filtro de threads escondendo threads (nunca o diff) */
+  .thread[hidden], .patch[hidden], .review-summary[hidden],
+  .inline-slot[hidden] { display: none; }
+
+  .ti-empty {
+    margin: 0; padding: 0.7rem 0.85rem;
+    font-size: 0.8rem; color: var(--ink-faint);
+  }
+
+  .filter-note {
+    margin: 0 0 1rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 5px 5px 0;
+    font-size: 0.82rem;
+    color: var(--accent);
+  }
+
+  .filter-note[hidden] { display: none; }
+
+  .filter-note button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+    padding: 0;
+  }
+
+  /* painel de preferências */
+  .prefs-panel {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    z-index: 30;
+    width: min(24rem, 88vw);
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px var(--shadow);
+    padding: 0.9rem;
+  }
+
+  .prefs-panel[hidden] { display: none; }
+
+  .prefs-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .prefs-head h3 { margin: 0; font-size: 0.98rem; font-weight: 700; }
+
+  .prefs-close {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0.2rem;
+  }
+
+  .prefs-close:hover { color: var(--ink); }
+
+  .prefs-panel label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 0.4rem 0;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+
+  .prefs-panel input[type="checkbox"] {
+    margin: 0.15rem 0 0;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.5rem 0.85rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+
+  .stat b {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .stat span { color: var(--ink-faint); }
+  .stat.added b { color: var(--added); }
+  .stat.removed b { color: var(--removed); }
+
+  /* ===== Layout ===== */
+
+  .layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 3rem;
+    align-items: start;
+  }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .filenav { position: static; order: -1; }
+  }
+
+  .filenav {
+    position: sticky;
+    top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .filenav-group h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 0.6rem;
+  }
+
+  .filenav-group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-left: 1px solid var(--line);
+  }
+
+  .filenav-group li { margin: 0; }
+
+  .filenav-group a {
+    display: block;
+    padding: 0.32rem 0 0.32rem 0.75rem;
+    margin-left: -1px;
+    border-left: 1px solid transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .filenav-group a:hover { color: var(--accent); border-left-color: var(--accent); }
+
+  /* ===== Category sections ===== */
+
+  .category { margin-bottom: 3rem; }
+
+  .category-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .category-head .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.18rem 0.55rem;
+    border-radius: 4px;
+  }
+
+  .tag.critical { background: var(--removed-bg); color: var(--removed); }
+  .tag.qa { background: var(--accent-soft); color: var(--accent); }
+
+  .category-head h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+
+  .category-note {
+    max-width: 68ch;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+  }
+
+  /* ===== Patch card ===== */
+
+  .patch {
+    scroll-margin-top: 1.5rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+
+  .patch-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--line-soft);
+    flex-wrap: wrap;
+  }
+
+  .patch-path {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink);
+    min-width: 0;
+  }
+
+  .patch-path .dir { color: var(--ink-faint); }
+
+  .patch-head-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+
+  .badge {
+    flex-shrink: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .badge.new { background: var(--added-bg); color: var(--added); }
+  .badge.removed-file { background: var(--removed-bg); color: var(--removed); }
+  .badge.modified { background: var(--accent-soft); color: var(--accent); }
+
+  /* Contador de linhas: neutro, com os números em cor semântica. Antes usava a
+     mesma cor do badge de status e os dois se confundiam. */
+  .linecount {
+    display: inline-flex;
+    gap: 0.35rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  .linecount .up { color: var(--added); font-weight: 600; }
+  .linecount .down { color: var(--removed); font-weight: 600; }
+
+  .filetoggle {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .filetoggle button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.3rem 0.6rem;
+    background: var(--paper-raised);
+    color: var(--ink-soft);
+    border: none;
+    cursor: pointer;
+  }
+
+  .filetoggle button + button { border-left: 1px solid var(--line); }
+  .filetoggle button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+  .patch-why {
+    padding: 0.85rem 1.1rem 0.2rem;
+    max-width: 90ch;   /* prosa mantém medida legível mesmo em tela larga */
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .patch-why b { color: var(--ink); font-weight: 600; }
+
+  /* ===== Diff engine ===== */
+
+  .diffbody { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; line-height: 1.65; }
+
+  .hunk { margin: 0.9rem 0 0; }
+  .hunk + .hunk { border-top: 1px dashed var(--line-soft); }
+
+  .expand-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 1.1rem;
+    background: var(--paper-sunken);
+    border: none;
+    border-top: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--ink-faint);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .expand-row:hover { color: var(--accent); background: var(--accent-soft); }
+  .expand-row[hidden] { display: none; }
+
+  .diff-line, .fullfile-line {
+    display: grid;
+    grid-template-columns: 2.6rem 1.4rem minmax(0, 1fr) 1.6rem;
+    position: relative;
+  }
+
+  .fullfile-line { grid-template-columns: 2.6rem minmax(0, 1fr) 1.6rem; }
+
+  .diff-line .ln, .fullfile-line .ln {
+    text-align: right;
+    padding-right: 0.75rem;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+    cursor: pointer;
+  }
+
+  .diff-line .ln:hover, .fullfile-line .ln:hover { color: var(--accent); text-decoration: underline; }
+
+  .diff-line .mark { text-align: center; font-weight: 600; user-select: none; }
+
+  /* Uma scrollbar POR LINHA (overflow-x no .code) é inutilizável — o código
+     quebra na largura disponível. Em tela larga quase nada quebra; quando
+     quebra, a continuação fica recuada para não se confundir com nova linha. */
+  .diff-line .code, .fullfile-line .code {
+    padding-right: 0.5rem;
+    color: var(--ink-soft);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    text-indent: -2ch;
+    padding-left: 2ch;
+    tab-size: 2;
+  }
+
+  .diff-line.add { background: var(--added-line-bg); }
+  .diff-line.add .mark { color: var(--added); }
+  .diff-line.add .code { color: var(--ink); }
+
+  .diff-line.del { background: var(--removed-line-bg); }
+  .diff-line.del .mark { color: var(--removed); }
+  .diff-line.del .code { color: var(--ink); text-decoration: line-through; text-decoration-color: var(--removed); text-decoration-thickness: 1px; opacity: 0.85; }
+
+  .fullfile-line.hl { background: var(--added-line-bg); }
+  .fullfile-line.hl .code { color: var(--ink); }
+
+  .gutter-add {
+    opacity: 0;
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    color: var(--ink-faint);
+    font-size: 0.75rem;
+    line-height: 1;
+    cursor: pointer;
+    align-self: center;
+    justify-self: center;
+  }
+
+  .diff-line:hover .gutter-add, .fullfile-line:hover .gutter-add { opacity: 1; }
+  .gutter-add:hover { color: var(--accent); border-color: var(--accent); }
+
+  .diff-note {
+    padding: 0.75rem 1.1rem 1rem;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  /* split mode */
+
+  /* Esconde SÓ as linhas do bloco unificado (filhas diretas do .hunk). As linhas
+     dentro de .diff-split-side também têm .diff-line — um seletor descendente
+     apagaria as duas e deixaria o split só com os rótulos. */
+  .diffbody[data-mode="split"] .hunk > .diff-line { display: none; }
+  .diffbody[data-mode="split"] .diff-split { display: grid; }
+  .diff-split { display: none; grid-template-columns: 1fr 1px 1fr; border-top: 1px solid var(--line-soft); }
+  .diff-split-divider { background: var(--line); }
+  .diff-split-side { min-width: 0; }
+  .side-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.9rem;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .diff-split-side.before .side-label { color: var(--removed); background: var(--removed-bg); }
+  .diff-split-side.after .side-label { color: var(--added); background: var(--added-bg); }
+
+  /* No split a coluna já É a versão antiga — riscar o texto seria redundante. */
+  .diff-split-side .diff-line.del .code {
+    text-decoration: none;
+    opacity: 1;
+  }
+
+  @media (max-width: 760px) {
+    .diff-split { grid-template-columns: 1fr; }
+    .diff-split-divider { display: none; }
+    .diff-split-side.before { border-bottom: 1px solid var(--line-soft); }
+  }
+
+  .file-removed-block {
+    margin: 0.9rem 1.1rem 1.1rem;
+    padding: 0.9rem 1rem;
+    background: var(--removed-bg);
+    border: 1px dashed var(--removed);
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+  }
+
+  .file-removed-block code { color: var(--removed); background: none; padding: 0; }
+
+  .fullfile-scroll { max-height: 560px; overflow-y: auto; border-top: 1px solid var(--line-soft); }
+
+  /* ===== Preferências aplicadas ===== */
+
+  /* word wrap OFF: linha não quebra, o hunk ganha uma única scrollbar
+     (nunca uma por linha) */
+  body.nowrap .diff-line .code,
+  body.nowrap .fullfile-line .code {
+    white-space: pre;
+    overflow-wrap: normal;
+    text-indent: 0;
+    padding-left: 0;
+  }
+
+  body.nowrap .hunk,
+  body.nowrap .fullfile-scroll,
+  body.nowrap .diff-split-side { overflow-x: auto; }
+
+  /* Sem isto o grid comprime a coluna do código e o texto é CORTADO em vez de
+     rolar — `min-width: max-content` faz a linha crescer e o container rolar. */
+  body.nowrap .diff-line,
+  body.nowrap .fullfile-line { min-width: max-content; }
+
+  /* whitespace visível */
+  .ws { color: var(--ink-faint); opacity: 0.55; }
+
+  /* ocorrências da busca */
+  mark.hit {
+    background: var(--status-answered-bg);
+    color: var(--ink);
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  mark.hit.current {
+    background: var(--accent);
+    color: var(--paper-raised);
+  }
+
+  /* árvore de arquivos colapsada */
+  .layout.tree-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .layout.tree-collapsed .filenav { display: none; }
+
+  /* hunk alvo da navegação entre diferenças */
+  .hunk.flash { animation: flash 1.1s ease-out; }
+  @keyframes flash {
+    0%   { background: var(--accent-soft); }
+    100% { background: transparent; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hunk.flash { animation: none; outline: 2px solid var(--accent); }
+  }
+
+  /* ===== Rich diff (markdown renderizado) ===== */
+
+  .richdiff {
+    /* padding-left generoso: é onde os números de linha ficam */
+    padding: 1.1rem 1.3rem 1.3rem 4.2rem;
+    border-top: 1px solid var(--line-soft);
+    /* O .diffbody é monospace porque exibe código. Markdown renderizado é
+       PROSA: herdar mono deixava tudo com cara de terminal e ilegível. */
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.65;
+    /* sem limite aqui: quem tem medida é o TEXTO. Tabela e código aproveitam a
+       tela inteira — era o espaço vazio à direita em monitor largo. */
+  }
+
+  /* prosa mantém medida de leitura */
+  .richdiff > p,
+  .richdiff > h1, .richdiff > h2, .richdiff > h3, .richdiff > h4,
+  .richdiff > blockquote,
+  .richdiff > ul, .richdiff > ol {
+    max-width: 88ch;
+  }
+
+  /* tabela e bloco de código usam o espaço disponível */
+  .richdiff > table, .richdiff > pre { max-width: 100%; width: 100%; }
+  .richdiff > table { display: table; }
+
+  /* Número de linha no conteúdo renderizado. Absoluto para não entrar no fluxo
+     do bloco — um <li> ou <th> com um span extra dentro quebraria o layout. */
+  .richdiff [data-line] { position: relative; }
+
+  .rd-ln {
+    position: absolute;
+    left: -3.6rem;
+    top: 0.15em;
+    width: 2.7rem;
+    padding: 0;
+    text-align: right;
+    background: none;
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    opacity: 0.45;
+    cursor: pointer;
+    user-select: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rd-ln:hover {
+    opacity: 1;
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  /* a linha inteira responde ao hover, para o alvo de clique não ser só o número */
+  .richdiff [data-line]:hover > .rd-ln { opacity: 0.9; }
+
+  /* Em lista, o número de linha alinha com os demais gutters — antes ficava
+     sobre o marcador "1." que o navegador desenha na margem do <li>. */
+  .richdiff li > .rd-ln { left: -5.6rem; }
+
+  /* tabela e pre têm caixa própria: alinha o número ao topo da caixa */
+  .richdiff table > .rd-ln,
+  .richdiff pre > .rd-ln { top: 0.5rem; }
+
+  @media (max-width: 700px) {
+    .richdiff { padding-left: 1.3rem; }
+    .rd-ln { position: static; display: inline-block; width: auto; margin-right: 0.5rem; opacity: 0.6; }
+  }
+
+  .richdiff-note {
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    font-style: italic;
+    margin: 0 0 1rem;
+  }
+
+  .richdiff h1, .richdiff h2, .richdiff h3, .richdiff h4 {
+    line-height: 1.25;
+    margin: 1.4rem 0 0.5rem;
+    text-wrap: balance;
+  }
+
+  .richdiff h1 { font-size: 1.4rem; }
+  .richdiff h2 { font-size: 1.15rem; border-bottom: 1px solid var(--line-soft); padding-bottom: 0.25rem; }
+  .richdiff h3 { font-size: 1rem; }
+  .richdiff h4 { font-size: 0.92rem; color: var(--ink-soft); }
+  .richdiff > *:first-child { margin-top: 0; }
+
+  .richdiff p, .richdiff li {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    /* justificado com hifenização: sem hyphens, justify abre rios de espaço
+       em branco no meio das linhas */
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+  }
+
+  /* não justificar o que quebraria: código, tabela, títulos */
+  .richdiff pre, .richdiff table, .richdiff th, .richdiff td,
+  .richdiff h1, .richdiff h2, .richdiff h3, .richdiff h4 { text-align: left; hyphens: manual; }
+  .richdiff strong { color: var(--ink); }
+  .richdiff ul, .richdiff ol { padding-left: 1.9rem; }
+  .richdiff li { margin: 0.2rem 0; }
+
+  .richdiff code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.86em;
+    hyphens: manual;
+    background: var(--paper-sunken);
+    padding: 0.08rem 0.35rem;
+    border-radius: 4px;
+  }
+
+  .richdiff pre {
+    background: var(--paper-sunken);
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    padding: 0.7rem 0.85rem;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    line-height: 1.55;
+  }
+
+  .richdiff pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* Régua do markdown: sem estilo explícito o <hr> herdava borda de caixa e
+     aparecia como retângulo vazio — e sobrepondo a legenda. */
+  .richdiff hr {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 1.4rem 0;
+    height: 0;
+  }
+
+  /* Citação em cor NEUTRA. Antes usava o accent, e o olho lia aquelas barras
+     laranja como marcação de diff — cor semântica fica reservada para
+     adicionado/removido. */
+  .richdiff blockquote {
+    margin: 0.8rem 0;
+    padding: 0.2rem 0 0.2rem 0.9rem;
+    border-left: 3px solid var(--line);
+    color: var(--ink-faint);
+  }
+
+  .richdiff table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 0.8rem 0; }
+  .richdiff th, .richdiff td { border: 1px solid var(--line-soft); padding: 0.35rem 0.55rem; text-align: left; }
+  .richdiff th { background: var(--paper-sunken); color: var(--ink); font-weight: 600; }
+
+  .richdiff .fm {
+    background: var(--paper-sunken);
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    white-space: pre-wrap;
+    margin-bottom: 1rem;
+  }
+
+  /* Marcação de mudança no conteúdo renderizado (rich diff) — o bloco carrega
+     a origem das linhas, então sabemos o que entrou e o que saiu. */
+  .rd-add {
+    background: var(--added-bg);
+    border-left: 3px solid var(--added);
+    padding: 0.15rem 0.6rem;
+    margin-left: -0.75rem;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .rd-del {
+    background: var(--removed-bg);
+    border-left: 3px solid var(--removed);
+    padding: 0.15rem 0.6rem;
+    margin-left: -0.75rem;
+    border-radius: 0 4px 4px 0;
+    opacity: 0.75;
+  }
+
+  .rd-del, .rd-del * { text-decoration: line-through; text-decoration-color: var(--removed); }
+
+  .rd-legend {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    margin: 0 0 1.3rem;
+  }
+
+  .rd-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .rd-legend i {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .rd-legend i.a { background: var(--added); }
+  .rd-legend i.d { background: var(--removed); }
+  .rd-legend i.n { background: transparent; border: 1px solid var(--line); }
+
+  .rd-removed-block {
+    margin-top: 1.6rem;
+    padding-top: 0.9rem;
+    border-top: 1px dashed var(--line);
+  }
+
+  .rd-removed-block > h4 {
+    margin: 0 0 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--removed);
+  }
+
+  .richdiff-unavailable {
+    padding: 1.1rem 1.3rem;
+    border-top: 1px solid var(--line-soft);
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  /* ===== Toast (aviso visível de ação concluída) ===== */
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translate(-50%, 1rem);
+    z-index: 60;
+    max-width: min(46rem, 92vw);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.8rem 1rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--accent);
+    border-left-width: 4px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px -10px var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
+  .toast-icon { font-size: 1.05rem; line-height: 1.3; }
+
+  .toast-body { min-width: 0; }
+
+  .toast-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0 0 0.15rem;
+  }
+
+  .toast-text {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--ink-soft);
+  }
+
+  .toast-close {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0.1rem;
+    margin-left: auto;
+  }
+
+  .toast-close:hover { color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast { transition: none; }
+  }
+
+  /* região de anúncios para leitor de tela */
+  .sr-live {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* comentários cuja linha não está no trecho exibido */
+  .offscreen-group {
+    border: 1px dashed var(--status-answered);
+    border-radius: 8px;
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .offscreen-note {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: var(--status-answered);
+  }
+
+  /* ===== Comentário inline, ancorado na linha (modelo GitLab) ===== */
+
+  .inline-slot {
+    background: var(--paper-sunken);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 0.6rem 1.1rem 0.7rem 2.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* a thread inline não precisa da moldura da lista do pé */
+  .inline-slot .thread { max-width: 96ch; }
+
+  .inline-slot .composer {
+    margin-top: 0;
+    max-width: 96ch;
+    display: flex;           /* inline nasce aberto: foi um clique deliberado */
+  }
+
+  .inline-anchor {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .inline-anchor b { color: var(--accent); font-weight: 600; }
+  .inline-anchor .anchor-from { color: var(--ink-faint); opacity: 0.8; }
+
+  /* editar / remover mensagem */
+  .msg-acts { margin-left: auto; display: inline-flex; gap: 0.3rem; opacity: 0; transition: opacity 0.12s; }
+  .msg:hover .msg-acts, .msg:focus-within .msg-acts { opacity: 1; }
+  .msg-act {
+    background: none; border: 1px solid transparent; border-radius: 4px;
+    padding: 0.05rem 0.3rem; font: inherit; font-size: 0.72rem;
+    color: var(--ink-faint); cursor: pointer;
+  }
+  .msg-act:hover { border-color: var(--line); color: var(--ink); }
+  .msg-act.danger:hover { border-color: var(--del-line); color: var(--del-ink); }
+  .msg-act.armed { border-color: var(--del-line); color: var(--del-ink); font-weight: 600; }
+  /* armado precisa ficar visível mesmo se o mouse sair do bloco */
+  .msg-acts:has(.armed) { opacity: 1; }
+  .msg-act:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; opacity: 1; }
+  .msg-edited { font-size: 0.7rem; color: var(--ink-faint); font-style: italic; }
+
+  .msg-edit { display: grid; gap: 0.4rem; margin-top: 0.3rem; }
+  .msg-edit textarea {
+    width: 100%; box-sizing: border-box; resize: vertical;
+    font: inherit; font-size: 0.86rem; line-height: 1.5;
+    color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 5px; padding: 0.4rem 0.5rem;
+  }
+  .msg-edit textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .msg-edit-row { display: flex; gap: 0.35rem; }
+  .btn-mini {
+    font: inherit; font-size: 0.76rem; padding: 0.2rem 0.55rem;
+    border: 1px solid var(--line); border-radius: 5px;
+    background: var(--surface, transparent); color: var(--ink); cursor: pointer;
+  }
+  .btn-mini:hover { border-color: var(--ink-faint); }
+  /* Nome proprio, nao ".primary": aquele ja existe em button.primary com
+     background accent, e reusa-lo herdava o fundo sem a cor do texto — o botao
+     Salvar saiu laranja-no-laranja, ilegivel. Aqui declaro os tres juntos. */
+  .btn-mini.go {
+    background: var(--accent);
+    color: var(--paper-raised);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .btn-mini.go:hover { filter: brightness(1.08); }
+  .btn-mini:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* no split o comentário fica abaixo do par de colunas, ocupando a largura
+     toda — inserir dentro de uma coluna quebraria o grid de duas vias */
+  .diffbody[data-mode="split"] .inline-slot { padding-left: 1.1rem; }
+
+  /* ===== (1) Lista navegável de threads no dropdown ===== */
+
+  .tb-menu-sep {
+    border-top: 1px solid var(--line-soft);
+    margin: 0.35rem 0.2rem;
+  }
+
+  .tb-menu-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    padding: 0.3rem 0.6rem 0.2rem;
+  }
+
+  .thread-index {
+    max-height: 15rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .thread-index:empty::before {
+    content: "nenhuma thread ainda";
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    font-style: italic;
+    padding: 0.3rem 0.6rem 0.5rem;
+  }
+
+  .ti-item {
+    display: grid;
+    grid-template-columns: 0.55rem 1fr auto;
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.4rem 0.6rem;
+    background: none;
+    border: none;
+    border-radius: 5px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  .ti-item:hover { background: var(--paper-sunken); }
+
+  .ti-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; align-self: center; }
+  .ti-dot[data-status="aberto"] { background: var(--status-open); }
+  .ti-dot[data-status="respondido"] { background: var(--status-answered); }
+  .ti-dot[data-status="resolvido"] { background: var(--added); }
+
+  .ti-text { min-width: 0; }
+  .ti-where {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    color: var(--ink-faint);
+  }
+  .ti-preview {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 17rem;
+  }
+  .ti-item[data-answered="1"] .ti-preview { color: var(--ink); }
+  .ti-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--accent);
+    align-self: center;
+  }
+
+  /* ===== (1) thread colapsável ===== */
+
+  /* ===== (2) arquivo em visualização ===== */
+
+  .filenav-group a.current {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 4px 4px 0;
+    font-weight: 600;
+  }
+
+  .patch.current > .patch-head { box-shadow: inset 3px 0 0 var(--accent); }
+
+  /* ===== (3) número da linha no rich leva ao source ===== */
+
+  .rd-ln[data-jump] { text-decoration: none; }
+  .rd-ln[data-jump]:hover { text-decoration: underline; }
+
+  /* botão de comentar no rich, separado do número */
+  .rd-comment {
+    position: absolute;
+    left: -1.6rem;
+    top: 0.1em;
+    width: 1.2rem;
+    height: 1.2rem;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--paper-raised);
+    color: var(--ink-faint);
+    font-size: 0.72rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  .richdiff [data-line]:hover > .rd-comment { opacity: 1; }
+  .rd-comment:hover { color: var(--accent); border-color: var(--accent); }
+
+  .richdiff li > .rd-comment { left: -3.4rem; }
+
+  /* linha destacada ao chegar de um salto */
+  .jump-target { animation: jumpflash 1.6s ease-out; }
+  @keyframes jumpflash {
+    0%, 20% { background: var(--accent-soft); }
+    100% { background: transparent; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .jump-target { animation: none; outline: 2px solid var(--accent); }
+  }
+
+  /* ===== (4) borda por autoria nos comentários enviados ===== */
+
+  .msg {
+    border-left: 3px solid transparent;
+  }
+
+  .msg[data-role="human"] { border-left-color: var(--status-open); }
+  .msg[data-role="agent"] { border-left-color: var(--accent); }
+
+  /* thread já tratada pelo agente ganha moldura destacada */
+  .thread[data-answered="1"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-soft);
+  }
+
+  /* ===== Discussion / threads ===== */
+
+  .discussion {
+    border-top: 1px solid var(--line);
+    padding: 0.9rem 1.1rem 1.1rem;
+    background: var(--paper-sunken);
+  }
+
+  .discussion-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+  }
+
+  .discussion-head h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  .new-thread-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: none;
+    border-radius: 5px;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .thread-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  .thread-list:empty::before {
+    content: "Nenhuma discussão ainda. Clique num número de linha ou em \"Novo comentário\" para abrir uma thread.";
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  .thread {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .thread-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--line-soft);
+    flex-wrap: wrap;
+  }
+
+  .thread-line-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+  }
+
+  .thread-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.64rem;
+    color: var(--ink-faint);
+    opacity: 0.65;
+    user-select: all;
+  }
+
+  /* ===== Âncora envelhecida (padrão GitHub "Outdated") ===== */
+
+  .anchor-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .anchor-tag.outdated { background: var(--status-answered-bg); color: var(--status-answered); }
+  .anchor-tag.moved { background: var(--status-open-bg); color: var(--status-open); }
+
+  .anchor-tag.moved button {
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .thread.outdated { border-color: var(--status-answered); }
+
+  /* snippet da linha como ela era quando o comentário foi feito */
+  .thread-snippet {
+    margin: 0;
+    padding: 0.45rem 0.8rem;
+    background: var(--paper-sunken);
+    border-bottom: 1px solid var(--line-soft);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .thread-snippet .lbl {
+    display: block;
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--status-answered);
+    margin-bottom: 0.2rem;
+    white-space: normal;
+  }
+
+  .thread-snippet del {
+    text-decoration: line-through;
+    text-decoration-color: var(--removed);
+    color: var(--ink-soft);
+  }
+
+  /* indicador de gravação das threads */
+  .save-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--ink-faint);
+    background: var(--paper-raised);
+    white-space: nowrap;
+  }
+
+  .save-chip[data-state="saving"] { color: var(--status-open); border-color: var(--status-open); }
+  .save-chip[data-state="saved"]  { color: var(--added); border-color: var(--added); }
+  .save-chip[data-state="dirty"]  { color: var(--status-answered); border-color: var(--status-answered); }
+  .save-chip[data-state="local"]  { color: var(--ink-faint); border-style: dashed; }
+  .save-chip[data-state="error"]  { color: var(--removed); border-color: var(--removed); }
+
+  .action-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--added);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    cursor: pointer;
+  }
+
+  .action-link:hover { text-decoration-style: solid; color: var(--accent); }
+
+  /* ação que o agente tomou no código, dentro da resposta dele */
+  .msg-action {
+    margin: 0.4rem 0 0;
+    padding: 0.35rem 0.55rem;
+    background: var(--added-bg);
+    border-left: 2px solid var(--added);
+    border-radius: 0 4px 4px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--added);
+  }
+
+  .status-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    margin-left: auto;
+  }
+
+  .status-pill[data-status="aberto"] { background: var(--status-open-bg); color: var(--status-open); }
+  .status-pill[data-status="respondido"] { background: var(--status-answered-bg); color: var(--status-answered); }
+  .status-pill[data-status="resolvido"] { background: var(--added-bg); color: var(--added); }
+
+  .thread-msgs { display: flex; flex-direction: column; }
+
+  .msg { padding: 0.6rem 0.8rem; font-size: 0.87rem; line-height: 1.5; }
+  .msg + .msg { border-top: 1px solid var(--line-soft); }
+
+  .msg-head { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; }
+
+  .msg-author {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .msg[data-role="agent"] { background: var(--accent-soft); }
+  .msg[data-role="agent"] .msg-author { color: var(--accent); }
+
+  .author-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 0.05rem 0.35rem;
+    border-radius: 4px;
+    background: var(--accent);
+    color: var(--paper-raised);
+  }
+
+  .msg-time { font-size: 0.72rem; color: var(--ink-faint); }
+  .msg-text { color: var(--ink-soft); white-space: pre-wrap; }
+
+  /* imagens coladas no comentário */
+  .msg-shots { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+
+  .msg-shots a {
+    display: block;
+    line-height: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .msg-shots img { max-height: 150px; max-width: 100%; display: block; }
+  .msg-shots a:hover { border-color: var(--accent); }
+
+  .composer-shots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .composer-shots:empty { display: none; }
+
+  .shot-chip {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    line-height: 0;
+  }
+
+  .shot-chip img { max-height: 64px; display: block; }
+
+  .shot-chip button {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 1.1rem;
+    height: 1.1rem;
+    border: none;
+    border-radius: 3px;
+    background: var(--removed);
+    color: #fff;
+    font-size: 0.7rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .paste-hint {
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  .reply-row { display: flex; gap: 0.5rem; padding: 0.55rem 0.8rem; border-top: 1px solid var(--line-soft); }
+  .reply-row input[type="text"] { flex: 1; min-width: 0; }
+  .reply-row button { flex-shrink: 0; }
+
+  .composer {
+    margin-top: 0.6rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.7rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .composer.open { display: flex; }
+
+  .composer-target {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+
+  .composer input[type="text"], .composer textarea, .reply-row input[type="text"] {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .composer textarea { resize: vertical; min-height: 4.5rem; font-family: 'IBM Plex Mono', monospace; }
+
+  .composer-row { display: flex; gap: 0.5rem; }
+  .composer-row input[type="text"] { flex: 0 0 11rem; }
+
+  .composer-actions { display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; }
+  .composer-actions .paste-hint { margin-right: auto; }
+
+  button.primary {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    background: var(--accent);
+    color: var(--paper-raised);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  button.ghost {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.4rem 0.7rem;
+    background: transparent;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  /* ===== Review summary (comentários gerais, fora dos cards) ===== */
+
+  .review-summary {
+    margin-top: 3rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+
+  .review-summary-head {
+    padding: 1.1rem 1.1rem 0.9rem;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .review-summary-head h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 0.3rem;
+    letter-spacing: -0.005em;
+  }
+
+  .review-summary-head p {
+    margin: 0;
+    max-width: 68ch;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .review-summary .discussion { border-top: none; }
+
+  .review-summary .thread-list:empty::before {
+    content: "Nenhum comentário geral ainda.";
+  }
+
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);   /* atravessa a página inteira */
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+  }
+
+  /* Só o texto ganha medida; a régua acima segue full-width. */
+  footer .footer-inner { max-width: 92ch; }
+  footer .sync-note { margin-top: 0.4rem; }
+</style>
+
+<script type="application/json" id="review-data">__REVIEW_DATA__</script>
+
+<!-- Respostas do agente. A PÁGINA nunca escreve aqui (ela escreve em
+     data/threads.json); este bloco é substituído pelo Claude Code ao
+     republicar, depois de agir no código. Ligação por threadId. -->
+<script type="application/json" id="agent-replies">__AGENT_REPLIES__</script>
+
+<!-- Semente de threads. Republicar a página pela html form substitui a versão
+     inteira e leva embora o data/threads.json — só a files form preserva paths
+     não nomeados. Então, ao responder, o Claude Code ECOA aqui as threads que
+     recebeu; no load elas são fundidas com o arquivo de dados (por id), e o que
+     vier daqui é re-salvo. Sem isto, responder apaga os comentários. -->
+<script type="application/json" id="seed-threads">__SEED_THREADS__</script>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">__EYEBROW__</div>
+    <h1>__HEADING__</h1>
+    <p class="lede">__LEDE__</p>
+  </header>
+
+  <!-- Fora do <header> de propósito: sticky só cola enquanto o elemento pai
+       está em vista. Como irmã de .page, a barra acompanha toda a rolagem. -->
+  <div class="toolbar-bar">
+    <div class="masthead-controls">
+      <div class="stats">__STATS__</div>
+<div class="diff-toolbar" role="toolbar" aria-label="Controles de visualização do diff">
+
+        <button type="button" class="tb-icon" id="tb-tree" title="Collapse file tree"
+                aria-label="Colapsar árvore de arquivos" aria-pressed="false">◫</button>
+
+        <div class="tb-search">
+          <span aria-hidden="true" style="color:var(--ink-faint);font-size:0.8rem">⌕</span>
+          <input type="search" id="tb-search-input" placeholder="Search within code"
+                 aria-label="Buscar no código" autocomplete="off" spellcheck="false">
+          <span class="tb-search-count" id="tb-search-count" aria-live="off"></span>
+          <button type="button" class="tb-mini" id="tb-hit-prev" title="Ocorrência anterior" aria-label="Ocorrência anterior" disabled>↑</button>
+          <button type="button" class="tb-mini" id="tb-hit-next" title="Próxima ocorrência" aria-label="Próxima ocorrência" disabled>↓</button>
+        </div>
+
+        <div class="tb-select">
+          <button type="button" class="tb-view-btn" id="tb-view-btn" aria-haspopup="menu" aria-expanded="false">
+            <span aria-hidden="true">◱</span><span id="tb-view-label">Inline</span><span class="caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="tb-menu" id="tb-view-menu" role="menu" aria-label="Modo de visualização">
+            <button type="button" role="menuitemradio" data-view="split" aria-checked="false"><span class="mi" aria-hidden="true">◫</span>Side-by-side</button>
+            <button type="button" role="menuitemradio" data-view="inline" aria-checked="true"><span class="mi" aria-hidden="true">▤</span>Inline</button>
+            <button type="button" role="menuitemradio" data-view="modified" aria-checked="false"><span class="mi" aria-hidden="true">▣</span>Modified content</button>
+            <button type="button" role="menuitemradio" data-view="rich" aria-checked="false"><span class="mi" aria-hidden="true">❖</span>Rich diff<span class="mi-note">Markdown</span></button>
+          </div>
+        </div>
+
+        <button type="button" class="tb-icon" id="tb-prev-diff" title="Previous difference" aria-label="Diferença anterior">↑</button>
+        <button type="button" class="tb-icon" id="tb-next-diff" title="Next difference" aria-label="Próxima diferença">↓</button>
+
+        <div class="tb-group" role="group" aria-label="Navegar entre threads">
+          <button type="button" class="tb-icon" id="tb-prev-thread" title="Thread anterior" aria-label="Thread anterior">⤒</button>
+          <button type="button" class="tb-icon" id="tb-next-thread" title="Próxima thread" aria-label="Próxima thread">⤓</button>
+        </div>
+
+        <div class="tb-select">
+          <button type="button" class="tb-view-btn" id="tb-thread-btn" aria-haspopup="menu" aria-expanded="false"
+                  title="Filtrar threads por status">
+            <span aria-hidden="true">💬</span><span id="tb-thread-label">Threads</span><span class="caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="tb-menu" id="tb-thread-menu" role="menu" aria-label="Filtrar threads">
+            <button type="button" role="menuitemradio" data-tf="all" aria-checked="true"><span class="mi" aria-hidden="true">∗</span>Todas<span class="mi-count" data-count="all"></span></button>
+            <button type="button" role="menuitemradio" data-tf="aberto" aria-checked="false"><span class="mi" aria-hidden="true">○</span>Abertas<span class="mi-count" data-count="aberto"></span></button>
+            <button type="button" role="menuitemradio" data-tf="respondido" aria-checked="false"><span class="mi" aria-hidden="true">◐</span>Respondidas<span class="mi-count" data-count="respondido"></span></button>
+            <button type="button" role="menuitemradio" data-tf="resolvido" aria-checked="false"><span class="mi" aria-hidden="true">●</span>Resolvidas<span class="mi-count" data-count="resolvido"></span></button>
+
+            <div class="tb-menu-sep"></div>
+            <div class="tb-menu-label">Ir para a thread</div>
+            <div class="thread-index" id="thread-index"></div>
+          </div>
+        </div>
+
+        <div class="tb-group" role="group" aria-label="Expandir ou colapsar">
+          <button type="button" class="tb-icon" id="tb-collapse-all" title="Colapsar todos os diffs">⊟</button>
+          <button type="button" class="tb-icon" id="tb-expand-all" title="Expandir todos os diffs">⊞</button>
+        </div>
+
+        <span class="save-chip" id="tb-save" data-state="idle" hidden></span>
+        <button type="button" class="tb-icon" id="tb-copy-threads" title="Copiar threads como JSON"
+                aria-label="Copiar threads como JSON">⧉</button>
+
+        <div class="tb-select">
+          <button type="button" class="tb-icon" id="tb-prefs" title="Editor preferences"
+                  aria-label="Preferências do editor" aria-expanded="false">⚙</button>
+          <div class="prefs-panel" id="prefs-panel" role="dialog" aria-label="Editor preferences" hidden>
+            <div class="prefs-head">
+              <h3>Editor preferences</h3>
+              <button type="button" class="prefs-close" id="prefs-close" aria-label="Fechar">×</button>
+            </div>
+            <label><input type="checkbox" id="pref-ws"> Show and diff white space</label>
+            <label><input type="checkbox" id="pref-wrap" checked> Enable word wrap</label>
+            <label><input type="checkbox" id="pref-announce" checked> Enable announcements for line changes and comments to enhance screen reader accessibility</label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="sr-live" id="sr-live" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="toast" id="toast" role="alert">
+    <span class="toast-icon" aria-hidden="true">📋</span>
+    <div class="toast-body">
+      <p class="toast-title" id="toast-title">JSON copiado</p>
+      <p class="toast-text" id="toast-text"></p>
+    </div>
+    <button type="button" class="toast-close" id="toast-close" aria-label="Fechar aviso">×</button>
+  </div>
+
+  <div class="layout">
+
+    <nav class="filenav">__FILENAV__</nav>
+
+    <main class="patches">
+      <p class="filter-note" id="filter-note" hidden>
+        <span id="filter-note-text"></span>
+        <button type="button" id="filter-note-clear">mostrar todas</button>
+      </p>
+__CARDS__
+    </main>
+  </div>
+
+  <section class="review-summary" data-scope="review">
+    <div class="review-summary-head">
+      <h2>Comentários gerais do review</h2>
+      <p>Observações sobre o conjunto das mudanças — decisão de arquitetura, dúvida de escopo,
+         pendência que não pertence a nenhuma linha específica.</p>
+    </div>
+    <div class="discussion">
+      <div class="discussion-head"><h4>Threads do review</h4><button type="button" class="new-thread-btn">+ Novo comentário geral</button></div>
+      <div class="thread-list"></div>
+      <div class="composer">
+        <div class="composer-target">Novo comentário geral</div>
+        <textarea class="composer-text" placeholder="Escreva o comentário… (pode colar imagem com Ctrl+V)"></textarea>
+        <div class="composer-shots"></div>
+        <div class="composer-actions"><span class="paste-hint">Ctrl+V cola imagem</span><button type="button" class="ghost composer-cancel">Cancelar</button><button type="button" class="primary composer-submit">Comentar</button></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-inner">__FOOTER__</div>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var DATA = (function () {
+    try { return JSON.parse(document.getElementById('review-data').textContent); }
+    catch (e) { return { files: {}, patches: {} }; }
+  })();
+
+  var FILES = DATA.files || {};
+  var PATCHES = DATA.patches || {};
+
+  var EXPAND_STEP = 8;
+
+  function resolveAuthored(fileKey, hunkRows) {
+    var out = [];
+    hunkRows.forEach(function (r) {
+      if (r.t === 'd') {
+        r.lines.forEach(function (code) { out.push({ type: 'del', ln: null, code: code }); });
+      } else {
+        var from = r.ln, to = r.to || r.ln;
+        for (var n = from; n <= to; n++) {
+          out.push({ type: r.t === 'a' ? 'add' : 'ctx', ln: n, code: (FILES[fileKey][n - 1] != null ? FILES[fileKey][n - 1] : '') });
+        }
+      }
+    });
+    return out;
+  }
+
+  function initHunkState(fileKey, hunk) {
+    if (hunk._init) return;
+    var authored = resolveAuthored(fileKey, hunk.rows);
+    var realLns = authored.filter(function (r) { return r.ln != null; }).map(function (r) { return r.ln; });
+    hunk._file = fileKey;
+    hunk._naturalTop = Math.min.apply(null, realLns);
+    hunk._naturalBottom = Math.max.apply(null, realLns);
+    hunk._top = hunk._naturalTop;
+    hunk._bottom = hunk._naturalBottom;
+    hunk._init = true;
+  }
+
+  function computeRows(fileKey, hunk) {
+    initHunkState(fileKey, hunk);
+    var file = FILES[fileKey];
+    var above = [];
+    for (var n = hunk._top; n < hunk._naturalTop; n++) above.push({ type: 'ctx', ln: n, code: file[n - 1] || '' });
+    var middle = resolveAuthored(fileKey, hunk.rows);
+    var below = [];
+    for (var m = hunk._naturalBottom + 1; m <= hunk._bottom; m++) below.push({ type: 'ctx', ln: m, code: file[m - 1] || '' });
+    return above.concat(middle, below);
+  }
+
+  function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  // ===== Estado da toolbar (per-viewer, em localStorage) =====
+
+  // Favicon próprio da página: emoji desenhado como SVG inline. Não depende do
+  // ícone que o host associou ao artefato na criação, nem de cache dele.
+  (function () {
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+              '<text y=".9em" font-size="90">🔀</text></svg>';
+    var href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+    document.querySelectorAll('link[rel~="icon"]').forEach(function (l) { l.remove(); });
+    var link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/svg+xml';
+    link.href = href;
+    document.head.appendChild(link);
+  })();
+
+  var PREFS_KEY = 'diff-review-page-prefs';
+  // view: inline | split | modified | rich. O rich era um par de botões
+  // separado; virou opção do mesmo dropdown, porque dois controles disputavam
+  // quem mandava — dava para ver "Modified content" com o rich ligado.
+  var PREFS = { view: 'inline', ws: false, wrap: true, announce: true, tree: false };
+  try {
+    var saved = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    Object.keys(PREFS).forEach(function (k) { if (k in saved) PREFS[k] = saved[k]; });
+    if (saved.rich === true) PREFS.view = 'rich';   // migra preferência antiga
+  } catch (e) { /* storage indisponível — segue com os defaults */ }
+
+  function isRich() { return PREFS.view === 'rich'; }
+
+  function savePrefs() {
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(PREFS)); } catch (e) { /* ignora */ }
+  }
+
+  var search = { q: '', hits: [], idx: -1 };
+
+  function announce(msg) {
+    if (!PREFS.announce) return;
+    var live = document.getElementById('sr-live');
+    if (live) live.textContent = msg;
+  }
+
+  /** Aviso visível. `announce` é só para leitor de tela; isto é para os olhos. */
+  var toastTimer = null;
+  function showToast(title, text, ms) {
+    var el = document.getElementById('toast');
+    if (!el) return;
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-text').textContent = text || '';
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, ms || 6000);
+  }
+
+  (function () {
+    var close = document.getElementById('toast-close');
+    if (close) close.addEventListener('click', function () {
+      clearTimeout(toastTimer);
+      document.getElementById('toast').classList.remove('show');
+    });
+  })();
+
+  // ===== Célula de código: trata busca e whitespace numa passada =====
+
+  function renderCodeCell(text) {
+    var pieces = [];
+    var q = search.q;
+    if (q) {
+      var lower = text.toLowerCase(), lq = q.toLowerCase(), i = 0;
+      for (;;) {
+        var at = lower.indexOf(lq, i);
+        if (at === -1) { pieces.push({ t: text.slice(i), hit: false }); break; }
+        if (at > i) pieces.push({ t: text.slice(i, at), hit: false });
+        pieces.push({ t: text.slice(at, at + q.length), hit: true });
+        i = at + q.length;
+      }
+    } else {
+      pieces.push({ t: text, hit: false });
+    }
+    return pieces.map(function (p) {
+      var h = escapeHtml(p.t);
+      if (PREFS.ws) {
+        h = h.replace(/ +/g, function (run) {
+          return '<span class="ws">' + new Array(run.length + 1).join('·') + '</span>';
+        }).replace(/\t/g, '<span class="ws">→</span>');
+      }
+      return p.hit ? '<mark class="hit">' + h + '</mark>' : h;
+    }).join('');
+  }
+
+  function gutterBtn(ln, fileKey, patchId) {
+    if (ln == null) return '';
+    return '<button type="button" class="gutter-add" data-line="' + ln + '" data-file="' + fileKey +
+           '" data-patch="' + patchId + '" title="Comentar na linha ' + ln + '">+</button>';
+  }
+
+  function lineHtml(r, fileKey, patchId, opts) {
+    opts = opts || {};
+    var mark = opts.noMark ? ' ' : (r.type === 'add' ? '+' : r.type === 'del' ? '−' : ' ');
+    var cls = opts.noMark ? 'ctx' : r.type;
+    return '<div class="diff-line ' + cls + '"><span class="ln" data-line="' + (r.ln || '') + '">' +
+           (r.ln != null ? r.ln : '') + '</span><span class="mark">' + mark + '</span><span class="code">' +
+           renderCodeCell(r.code) + '</span>' + gutterBtn(r.ln, fileKey, patchId) + '</div>';
+  }
+
+  function rowsToUnifiedHtml(rows, fileKey, patchId) {
+    return rows.map(function (r) { return lineHtml(r, fileKey, patchId); }).join('');
+  }
+
+  // Modified content (Azure): só o conteúdo resultante, sem marcação de diff.
+  function rowsToModifiedHtml(rows, fileKey, patchId) {
+    return rows.filter(function (r) { return r.type !== 'del'; })
+               .map(function (r) { return lineHtml(r, fileKey, patchId, { noMark: true }); }).join('');
+  }
+
+  function rowsToSplitHtml(rows, fileKey, patchId) {
+    var before = rows.filter(function (r) { return r.type !== 'add'; });
+    var after = rows.filter(function (r) { return r.type !== 'del'; });
+    function side(list, cls, label) {
+      var body = list.map(function (r) { return lineHtml(r, fileKey, patchId); }).join('');
+      return '<div class="diff-split-side ' + cls + '"><div class="side-label">' + label + '</div>' + body + '</div>';
+    }
+    return '<div class="diff-split">' + side(before, 'before', 'Antes') +
+           '<div class="diff-split-divider"></div>' + side(after, 'after', 'Depois') + '</div>';
+  }
+
+  function renderHunk(fileKey, hunk, patchId) {
+    var rows = computeRows(fileKey, hunk);
+    var atTop = hunk._top <= 1;
+    var atBottom = hunk._bottom >= FILES[fileKey].length;
+    var html = '';
+    html += '<button type="button" class="expand-row" data-expand="up" ' + (atTop ? 'hidden' : '') + '>▲ ' + EXPAND_STEP + ' linhas acima</button>';
+    if (PREFS.view === 'modified') {
+      html += rowsToModifiedHtml(rows, fileKey, patchId);
+    } else {
+      html += rowsToUnifiedHtml(rows, fileKey, patchId);
+      html += rowsToSplitHtml(rows, fileKey, patchId);
+    }
+    html += '<button type="button" class="expand-row" data-expand="down" ' + (atBottom ? 'hidden' : '') + '>▼ ' + EXPAND_STEP + ' linhas abaixo</button>';
+    return html;
+  }
+
+  // ===== Rich diff: markdown renderizado (subset) =====
+
+  function inlineMd(s) {
+    var out = escapeHtml(s);
+    out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+    out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    out = out.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,;:]|$)/g, '$1<em>$2</em>');
+    out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" rel="noopener">$1</a>');
+    return out;
+  }
+
+  /**
+   * Renderiza markdown marcando o que mudou.
+   * `lines` são as linhas do arquivo final; `addSet` diz quais foram
+   * adicionadas. Cada bloco emitido carrega a classe rd-add quando alguma
+   * das linhas que o compõem é nova — é isso que faz o rich diff ser um
+   * DIFF e não só uma prévia do resultado.
+   */
+  function renderMarkdownDiff(lines, addSet, delLines) {
+    var body = renderMarkdown(lines, addSet);
+    var out = '<p class="rd-legend">' +
+      '<span><i class="a"></i>adicionado</span>' +
+      '<span><i class="d"></i>removido</span>' +
+      '<span><i class="n"></i>sem marca = inalterado</span></p>' + body;
+    if (delLines && delLines.length) {
+      out += '<div class="rd-removed-block"><h4>Conteúdo removido</h4>' +
+             '<div class="rd-del">' + renderMarkdown(delLines, null) + '</div></div>';
+    }
+    return out;
+  }
+
+  function renderMarkdown(lines, addSet) {
+    var html = [], i = 0, n = lines.length;
+
+    // Marca o bloco quando alguma linha de origem [a,b] é adicionada, e grava a
+    // linha no próprio elemento — é o que permite numerar, navegar e comentar
+    // no conteúdo renderizado. addSet null = bloco sem linhas reais do arquivo
+    // (o "conteúdo removido"), que não deve receber número.
+    function tag(open, a, b) {
+      if (!addSet) return open;
+      var attrs = ' data-line="' + a + '"';
+      if (b != null && b !== a) attrs += ' data-line-end="' + b + '"';
+      for (var k = a; k <= (b == null ? a : b); k++) {
+        if (addSet[k]) { attrs += ' class="rd-add"'; break; }
+      }
+      return open.replace(/^<(\w+)/, '<$1' + attrs);
+    }
+
+    // frontmatter YAML como bloco literal
+    if (lines[0] === '---') {
+      var fm = [], j = 1;
+      while (j < n && lines[j] !== '---') { fm.push(lines[j]); j++; }
+      if (j < n) {
+        html.push('<div class="fm">' + escapeHtml(fm.join('\n')) + '</div>');
+        i = j + 1;
+      }
+    }
+
+    var listOpen = null;
+    function closeList() { if (listOpen) { html.push('</' + listOpen + '>'); listOpen = null; } }
+
+    /** Linha que encerra o parágrafo corrente (ou o blockquote). */
+    function isBlockStart(l) {
+      return /^\s*$/.test(l)              // linha vazia
+        || /^#{1,4}\s/.test(l)            // heading
+        || /^```/.test(l)                  // code fence
+        || /^\s*[-*]\s/.test(l)           // lista
+        || /^\s*\d+\.\s/.test(l)         // lista ordenada
+        || /^>/.test(l)                    // citação
+        || /^\|/.test(l)                   // tabela
+        || /^(---|\*\*\*|___)\s*$/.test(l); // régua
+    }
+
+    for (; i < n; i++) {
+      var line = lines[i];
+
+      var fence = line.match(/^```(\w*)/);
+      if (fence) {
+        closeList();
+        var fenceStart = i + 1;
+        var buf = [];
+        i++;
+        while (i < n && !/^```/.test(lines[i])) { buf.push(lines[i]); i++; }
+        html.push(tag('<pre>', fenceStart, i + 1) + '<code>' + escapeHtml(buf.join('\n')) + '</code></pre>');
+        continue;
+      }
+
+      if (/^\s*$/.test(line)) { closeList(); continue; }
+
+      var h = line.match(/^(#{1,4})\s+(.*)$/);
+      if (h) {
+        closeList();
+        var lvl = h[1].length;
+        html.push(tag('<h' + lvl + '>', i + 1) + inlineMd(h[2]) + '</h' + lvl + '>');
+        continue;
+      }
+
+      if (/^(---|\*\*\*|___)\s*$/.test(line)) { closeList(); html.push(tag('<hr>', i + 1)); continue; }
+
+      if (/^>\s?/.test(line)) {
+        closeList();
+        var qStart = i + 1;
+        var qbuf = [line.replace(/^>\s?/, '')];
+        // uma citação continua enquanto as linhas seguintes forem '>' ou texto
+        // solto pertencente a ela (lazy continuation do markdown)
+        while (i + 1 < n) {
+          var nx = lines[i + 1];
+          if (/^>\s?/.test(nx)) { qbuf.push(nx.replace(/^>\s?/, '')); i++; continue; }
+          if (!isBlockStart(nx)) { qbuf.push(nx); i++; continue; }
+          break;
+        }
+        html.push(tag('<blockquote>', qStart, i + 1) + inlineMd(qbuf.join(' ')) + '</blockquote>');
+        continue;
+      }
+
+      // tabela: linha de cabeçalho seguida de separador |---|
+      if (/^\|/.test(line) && i + 1 < n && /^\|[\s:|-]+\|?\s*$/.test(lines[i + 1])) {
+        closeList();
+        function cells(row) {
+          return row.replace(/^\||\|$/g, '').split('|').map(function (c) { return c.trim(); });
+        }
+        var head = cells(line);
+        var tblStart = i + 1;
+        var out = '<table><thead><tr>' + head.map(function (c) { return '<th>' + inlineMd(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
+        i += 2;
+        while (i < n && /^\|/.test(lines[i])) {
+          out += '<tr>' + cells(lines[i]).map(function (c) { return '<td>' + inlineMd(c) + '</td>'; }).join('') + '</tr>';
+          i++;
+        }
+        i--;
+        html.push(tag('<table>', tblStart, i + 1) + out.slice('<table>'.length) + '</tbody></table>');
+        continue;
+      }
+
+      var ul = line.match(/^\s*[-*]\s+(.*)$/);
+      if (ul) {
+        if (listOpen !== 'ul') { closeList(); html.push('<ul>'); listOpen = 'ul'; }
+        var liStart = i + 1;
+        var lbuf = [ul[1]];
+        while (i + 1 < n && !isBlockStart(lines[i + 1])) { lbuf.push(lines[i + 1].trim()); i++; }
+        html.push(tag('<li>', liStart, i + 1) + inlineMd(lbuf.join(' ')) + '</li>');
+        continue;
+      }
+
+      var ol = line.match(/^\s*\d+\.\s+(.*)$/);
+      if (ol) {
+        if (listOpen !== 'ol') { closeList(); html.push('<ol>'); listOpen = 'ol'; }
+        var oliStart = i + 1;
+        var obuf = [ol[1]];
+        while (i + 1 < n && !isBlockStart(lines[i + 1])) { obuf.push(lines[i + 1].trim()); i++; }
+        html.push(tag('<li>', oliStart, i + 1) + inlineMd(obuf.join(' ')) + '</li>');
+        continue;
+      }
+
+      // Parágrafo do markdown junta linhas consecutivas. Tratar cada linha
+      // física como um <p> quebrava o texto em blocos soltos — e com a
+      // marcação de diff cada linha virava uma caixa separada.
+      closeList();
+      var pStart = i + 1;
+      var buf = [line];
+      while (i + 1 < n && !isBlockStart(lines[i + 1])) { buf.push(lines[i + 1]); i++; }
+      html.push(tag('<p>', pStart, i + 1) + inlineMd(buf.join(' ')) + '</p>');
+    }
+    closeList();
+    return html.join('\n');
+  }
+
+  /**
+   * Numeração no rich diff: cada bloco com data-line ganha um botão de gutter.
+   * Posicionado por CSS (absoluto), não por wrapper — envolver um <li> num div
+   * quebraria a semântica da lista.
+   */
+  function addRichGutters(root, patchId) {
+    root.querySelectorAll('[data-line]').forEach(function (el) {
+      if (el.querySelector(':scope > .rd-ln')) return;
+      var ln = el.getAttribute('data-line');
+      var end = el.getAttribute('data-line-end');
+
+      // O NÚMERO leva ao source diff naquela linha. Comentar tem botão próprio:
+      // um clique só não pode significar duas coisas.
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rd-ln';
+      b.dataset.line = ln;
+      b.dataset.patch = patchId;
+      b.dataset.jump = '1';
+      b.textContent = ln;
+      b.title = 'Ver a linha ' + ln + ' no diff de origem';
+      el.insertBefore(b, el.firstChild);
+
+      var c = document.createElement('button');
+      c.type = 'button';
+      c.className = 'rd-comment';
+      c.dataset.line = ln;
+      c.dataset.patch = patchId;
+      c.textContent = '+';
+      c.title = end && end !== ln
+        ? 'Comentar (linhas ' + ln + '–' + end + ')'
+        : 'Comentar na linha ' + ln;
+      el.insertBefore(c, b.nextSibling);
+    });
+  }
+
+  /**
+   * Expande o CONTEXTO do hunk mais próximo até a linha entrar no diff.
+   * Nunca troca para "arquivo inteiro": o limite de expansão é o próprio
+   * arquivo, então qualquer linha é alcançável sem sair do diff — e sair dele
+   * derrubava o side-by-side e a marcação de +/-.
+   * Devolve quantas linhas de contexto foram reveladas (0 = já estava visível).
+   */
+  function expandUntilVisible(article, line) {
+    var fileKey = article.getAttribute('data-file-key');
+    if (!fileKey || !PATCHES[fileKey] || !FILES[fileKey]) return -1;
+    var n = parseInt(line, 10);
+    var total = FILES[fileKey].length;
+
+    var best = null, bestIdx = -1, bestDist = Infinity;
+    PATCHES[fileKey].forEach(function (h, i) {
+      initHunkState(fileKey, h);
+      var d = n < h._top ? h._top - n : (n > h._bottom ? n - h._bottom : 0);
+      if (d < bestDist) { bestDist = d; best = h; bestIdx = i; }
+    });
+    if (!best) return -1;
+    if (bestDist === 0) return 0;             // já visível
+
+    var MARGIN = 3;                            // respiro em volta da linha
+    if (n < best._top) best._top = Math.max(1, n - MARGIN);
+    else best._bottom = Math.min(total, n + MARGIN);
+
+    var hunkEl = article.querySelector('.hunk[data-hunk="' + bestIdx + '"]');
+    if (hunkEl) hunkEl.innerHTML = renderHunk(fileKey, best, article.id);
+    return bestDist + MARGIN;
+  }
+
+  /**
+   * Leva até a linha no diff de origem, expandindo contexto se preciso.
+   * Nunca abre o arquivo inteiro (ver expandUntilVisible).
+   */
+  function jumpToSource(patchId, line) {
+    var article = document.getElementById(patchId);
+    if (!article) return;
+    var n = parseInt(line, 10);
+
+    // rich diff e "arquivo inteiro" não têm hunks: volta para o diff primeiro
+    if (isRich()) {
+      PREFS.view = 'inline';
+      savePrefs();
+      renderAllDiffs();
+      applyPrefs();
+      if (search.q) runSearch(search.q);
+    }
+    var dif = article.querySelector('.ft-btn[data-ft="diff"]');
+    if (dif && !dif.classList.contains('active')) {
+      article.querySelectorAll('.ft-btn').forEach(function (b) { b.classList.toggle('active', b === dif); });
+      renderPatchDiff(article);
+    }
+
+    var revealed = expandUntilVisible(article, n);
+    if (store.threads.length) renderThreads();
+    if (search.q) runSearch(search.q);
+
+    var hit = article.querySelector('.hunk > .diff-line .ln[data-line="' + n + '"]');
+    if (!hit) { announce('Linha ' + n + ' não encontrada no diff'); return; }
+
+    var row = hit.closest('.diff-line');
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    document.querySelectorAll('.jump-target').forEach(function (e) { e.classList.remove('jump-target'); });
+    void row.offsetWidth;
+    row.classList.add('jump-target');
+
+    if (revealed > 0) {
+      showToast('Contexto expandido',
+        revealed + ' linhas de contexto foram abertas para mostrar a linha ' + n +
+        ' — o diff continua no modo atual.', 5000);
+    }
+    announce('Linha ' + n + ' no diff');
+  }
+
+  function isMarkdownFile(article) {
+    return /\.md$/.test(article.getAttribute('data-path') || '');
+  }
+
+  /**
+   * Aplica o realce da busca em conteúdo JÁ RENDERIZADO como HTML (rich diff).
+   * O caminho do código-fonte passa por renderCodeCell, que trata busca e
+   * whitespace sobre texto plano; aqui não há texto plano, então percorremos os
+   * nós de texto. Sem isto a busca simplesmente não existia no rich diff — o
+   * contador dizia "nada" com o termo visível na tela.
+   */
+  function highlightRendered(root, q) {
+    if (!q || !root) return 0;
+    var lq = q.toLowerCase();
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    var targets = [];
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeValue && node.nodeValue.toLowerCase().indexOf(lq) !== -1) targets.push(node);
+    }
+    var count = 0;
+    targets.forEach(function (n) {
+      var text = n.nodeValue, lower = text.toLowerCase();
+      var frag = document.createDocumentFragment();
+      var i = 0;
+      for (;;) {
+        var at = lower.indexOf(lq, i);
+        if (at === -1) { frag.appendChild(document.createTextNode(text.slice(i))); break; }
+        if (at > i) frag.appendChild(document.createTextNode(text.slice(i, at)));
+        var mk = document.createElement('mark');
+        mk.className = 'hit';
+        mk.textContent = text.slice(at, at + q.length);
+        frag.appendChild(mk);
+        count++;
+        i = at + q.length;
+      }
+      n.parentNode.replaceChild(frag, n);
+    });
+    return count;
+  }
+
+  function renderRich(article) {
+    var body = article.querySelector('.diffbody');
+    var fileKey = article.getAttribute('data-file-key');
+    if (!body || !fileKey) return;
+    if (!isMarkdownFile(article)) {
+      body.innerHTML = '<p class="richdiff-unavailable">Rich diff só se aplica a arquivos Markdown. ' +
+        'Este é código-fonte — use a visualização de origem (&lt;/&gt;).</p>';
+      return;
+    }
+    // Origem das mudanças: quais linhas do arquivo final são novas, e o texto
+    // das que saíram. É isso que permite MARCAR o conteúdo renderizado, em vez
+    // de só mostrar o resultado (que não é um diff).
+    var addSet = {}, delLines = [];
+    (PATCHES[fileKey] || []).forEach(function (hunk) {
+      resolveAuthored(fileKey, hunk.rows).forEach(function (r) {
+        if (r.type === 'add') addSet[r.ln] = true;
+        else if (r.type === 'del') delLines.push(r.code);
+      });
+    });
+
+    body.innerHTML = '<div class="richdiff">' +
+      renderMarkdownDiff(FILES[fileKey], addSet, delLines) + '</div>';
+    addRichGutters(body, article.id);
+    highlightRendered(body, search.q);
+  }
+
+  // ===== Render por card =====
+
+  function renderPatchDiff(article) {
+    var fileKey = article.getAttribute('data-file-key');
+    if (!fileKey || !PATCHES[fileKey]) return;
+    var body = article.querySelector('.diffbody');
+    if (!body) return;
+    body.innerHTML = PATCHES[fileKey].map(function (hunk, i) {
+      return '<div class="hunk" data-hunk="' + i + '">' + renderHunk(fileKey, hunk, article.id) + '</div>';
+    }).join('');
+  }
+
+  function renderFullFile(article) {
+    var fileKey = article.getAttribute('data-file-key');
+    var body = article.querySelector('.diffbody');
+    if (!fileKey || !body) return;
+    var addedLines = {};
+    (PATCHES[fileKey] || []).forEach(function (hunk) {
+      resolveAuthored(fileKey, hunk.rows).forEach(function (r) {
+        if (r.type === 'add') addedLines[r.ln] = true;
+      });
+    });
+    var firstHl = null;
+    var html = FILES[fileKey].map(function (code, idx) {
+      var ln = idx + 1;
+      var hl = addedLines[ln] ? ' hl' : '';
+      if (addedLines[ln] && firstHl === null) firstHl = ln;
+      return '<div class="fullfile-line' + hl + '"' + (hl ? ' id="hl-' + article.id + '-' + ln + '"' : '') +
+             '><span class="ln" data-line="' + ln + '">' + ln + '</span><span class="code">' +
+             renderCodeCell(code) + '</span>' + gutterBtn(ln, fileKey, article.id) + '</div>';
+    }).join('');
+    body.innerHTML = '<div class="fullfile-scroll">' + html + '</div>';
+    if (firstHl) {
+      requestAnimationFrame(function () {
+        var t = document.getElementById('hl-' + article.id + '-' + firstHl);
+        if (t) t.scrollIntoView({ block: 'center' });
+      });
+    }
+  }
+
+  function renderArticle(article) {
+    if (!article.getAttribute('data-file-key')) return;
+    if (isRich()) { renderRich(article); return; }
+    var activeFt = article.querySelector('.ft-btn.active');
+    if (activeFt && activeFt.getAttribute('data-ft') === 'full') renderFullFile(article);
+    else renderPatchDiff(article);
+  }
+
+  function renderAllDiffs() {
+    document.querySelectorAll('.diffbody').forEach(function (b) { b.setAttribute('data-mode', PREFS.view); });
+    document.querySelectorAll('.patch[data-file-key]').forEach(renderArticle);
+    updateNavButtons();
+    // O diff foi reconstruído: as threads inline vivem dentro dele e precisam
+    // ser remontadas, senão desaparecem ao trocar de modo. E o contexto tem de
+    // ser reaberto, porque o render volta os hunks ao tamanho natural.
+    if (store.threads.length) { autoRevealAll(); renderThreads(); }
+  }
+
+  /** Estado dos ↑↓ — depende do DOM renderizado, nunca só das preferências. */
+  function updateNavButtons() {
+    var n = hunkList().length;
+    ['tb-prev-diff', 'tb-next-diff'].forEach(function (id) {
+      var b = document.getElementById(id);
+      if (!b) return;
+      b.disabled = n === 0;
+      b.title = (id === 'tb-prev-diff' ? 'Diferença anterior' : 'Próxima diferença') +
+                (n ? ' (' + n + ')' : ' — nada a navegar');
+    });
+  }
+
+  // ===== Aplicação das preferências =====
+
+  function applyPrefs() {
+    document.body.classList.toggle('nowrap', !PREFS.wrap);
+    var layout = document.querySelector('.layout');
+    if (layout) layout.classList.toggle('tree-collapsed', PREFS.tree);
+
+    var tree = document.getElementById('tb-tree');
+    if (tree) {
+      tree.setAttribute('aria-pressed', PREFS.tree ? 'true' : 'false');
+      tree.title = PREFS.tree ? 'Expand file tree' : 'Collapse file tree';
+    }
+
+    var label = document.getElementById('tb-view-label');
+    var names = { split: 'Side-by-side', inline: 'Inline', modified: 'Modified content', rich: 'Rich diff' };
+    if (label) label.textContent = names[PREFS.view] || 'Inline';
+    document.querySelectorAll('#tb-view-menu button').forEach(function (b) {
+      b.setAttribute('aria-checked', b.getAttribute('data-view') === PREFS.view ? 'true' : 'false');
+    });
+
+
+    var pw = document.getElementById('pref-ws'), pr = document.getElementById('pref-wrap'), pa = document.getElementById('pref-announce');
+    if (pw) pw.checked = PREFS.ws;
+    if (pr) pr.checked = PREFS.wrap;
+    if (pa) pa.checked = PREFS.announce;
+
+    // A navegação vale nos dois modos: no rich pula de bloco alterado em bloco
+    // alterado. O estado real depende do DOM, então fica em updateNavButtons.
+    updateNavButtons();
+  }
+
+  // ===== Navegação entre diferenças =====
+
+  var diffNav = { idx: -1 };
+
+  function hunkList() {
+    // No rich diff não existem hunks: a unidade de mudança é o bloco marcado.
+    var sel = isRich() ? '.patch .richdiff .rd-add' : '.patch .hunk';
+    return Array.prototype.slice.call(document.querySelectorAll(sel));
+  }
+
+  function gotoDiff(step) {
+    var list = hunkList();
+    if (!list.length) return;
+    diffNav.idx = (diffNav.idx + step + list.length) % list.length;
+    var el = list[diffNav.idx];
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    document.querySelectorAll('.flash').forEach(function (h) { h.classList.remove('flash'); });
+    void el.offsetWidth;
+    el.classList.add('flash');
+    var article = el.closest('.patch');
+    var path = article ? article.getAttribute('data-path') : '';
+    announce('Diferença ' + (diffNav.idx + 1) + ' de ' + list.length + ' em ' + path);
+  }
+
+  // ===== Busca no código =====
+
+  function runSearch(q) {
+    search.q = q.trim();
+    search.idx = -1;
+    renderAllDiffs();
+    search.hits = Array.prototype.slice.call(document.querySelectorAll('mark.hit'));
+    var count = document.getElementById('tb-search-count');
+    var prev = document.getElementById('tb-hit-prev'), next = document.getElementById('tb-hit-next');
+    if (count) count.textContent = search.q ? (search.hits.length ? '0/' + search.hits.length : 'nada') : '';
+    if (prev) prev.disabled = !search.hits.length;
+    if (next) next.disabled = !search.hits.length;
+    if (search.q) announce(search.hits.length + ' ocorrências de "' + search.q + '"');
+  }
+
+  function gotoHit(step) {
+    if (!search.hits.length) return;
+    search.idx = (search.idx + step + search.hits.length) % search.hits.length;
+    search.hits.forEach(function (m) { m.classList.remove('current'); });
+    var m = search.hits[search.idx];
+    m.classList.add('current');
+    m.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    var count = document.getElementById('tb-search-count');
+    if (count) count.textContent = (search.idx + 1) + '/' + search.hits.length;
+    announce('Ocorrência ' + (search.idx + 1) + ' de ' + search.hits.length);
+  }
+
+  // ===== Wire da toolbar =====
+
+  var viewBtn = document.getElementById('tb-view-btn');
+  var viewMenu = document.getElementById('tb-view-menu');
+
+  /**
+   * Fecha TODOS os popovers da toolbar. Genérico de propósito: a versão
+   * anterior listava os menus um a um e esqueceu o de threads — que ficava
+   * aberto sobre a página, escondendo o efeito do próprio filtro.
+   */
+  function closeMenus() {
+    document.querySelectorAll('.tb-menu.open').forEach(function (m) { m.classList.remove('open'); });
+    document.querySelectorAll('[aria-haspopup="menu"]').forEach(function (b) {
+      b.setAttribute('aria-expanded', 'false');
+    });
+    var pp = document.getElementById('prefs-panel'), pb = document.getElementById('tb-prefs');
+    if (pp) pp.hidden = true;
+    if (pb) pb.setAttribute('aria-expanded', 'false');
+  }
+
+  if (viewBtn) {
+    viewBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = viewMenu.classList.contains('open');
+      closeMenus();
+      if (!open) { viewMenu.classList.add('open'); viewBtn.setAttribute('aria-expanded', 'true'); }
+    });
+  }
+
+  if (viewMenu) {
+    viewMenu.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-view]');
+      if (!b) return;
+      PREFS.view = b.getAttribute('data-view');
+      savePrefs();
+      closeMenus();
+      // Inline/split/modified são modos de DIFF. Se algum card está em "arquivo
+      // inteiro" (por ex. após "Mostrar no diff"), escolher um deles parecia
+      // não fazer nada — o card seguia mostrando o arquivo. Volta para o diff.
+      if (PREFS.view !== 'rich') {
+        document.querySelectorAll('.patch .filetoggle').forEach(function (g) {
+          var full = g.querySelector('.ft-btn[data-ft="full"]');
+          var dif = g.querySelector('.ft-btn[data-ft="diff"]');
+          if (full && dif && full.classList.contains('active')) {
+            full.classList.remove('active');
+            dif.classList.add('active');
+          }
+        });
+      }
+      renderAllDiffs();
+      applyPrefs();
+      if (search.q) runSearch(search.q);
+      announce('Visualização: ' + b.textContent.trim());
+    });
+  }
+
+  var prefsBtn = document.getElementById('tb-prefs');
+  var prefsPanel = document.getElementById('prefs-panel');
+  if (prefsBtn && prefsPanel) {
+    prefsBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var wasHidden = prefsPanel.hidden;
+      closeMenus();
+      prefsPanel.hidden = !wasHidden;
+      prefsBtn.setAttribute('aria-expanded', wasHidden ? 'true' : 'false');
+    });
+    prefsPanel.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.getElementById('prefs-close').addEventListener('click', closeMenus);
+  }
+
+  document.addEventListener('click', closeMenus);
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    closeMenus();
+    closeInlineComposer();
+  });
+
+  var pws = document.getElementById('pref-ws');
+  if (pws) pws.addEventListener('change', function () {
+    PREFS.ws = pws.checked; savePrefs(); renderAllDiffs();
+    if (search.q) runSearch(search.q);
+    announce(PREFS.ws ? 'Espaços em branco visíveis' : 'Espaços em branco ocultos');
+  });
+
+  var pwrap = document.getElementById('pref-wrap');
+  if (pwrap) pwrap.addEventListener('change', function () {
+    PREFS.wrap = pwrap.checked; savePrefs(); applyPrefs();
+    announce(PREFS.wrap ? 'Quebra de linha ligada' : 'Quebra de linha desligada');
+  });
+
+  var pann = document.getElementById('pref-announce');
+  if (pann) pann.addEventListener('change', function () {
+    PREFS.announce = pann.checked; savePrefs();
+    if (PREFS.announce) announce('Anúncios para leitor de tela ativados');
+  });
+
+  var treeBtn = document.getElementById('tb-tree');
+  if (treeBtn) treeBtn.addEventListener('click', function () {
+    PREFS.tree = !PREFS.tree; savePrefs(); applyPrefs();
+    announce(PREFS.tree ? 'Árvore de arquivos colapsada' : 'Árvore de arquivos expandida');
+  });
+
+  var prevDiff = document.getElementById('tb-prev-diff'), nextDiff = document.getElementById('tb-next-diff');
+  if (prevDiff) prevDiff.addEventListener('click', function () { gotoDiff(-1); });
+  if (nextDiff) nextDiff.addEventListener('click', function () { gotoDiff(1); });
+
+  var searchInput = document.getElementById('tb-search-input');
+  if (searchInput) {
+    var t = null;
+    searchInput.addEventListener('input', function () {
+      clearTimeout(t);
+      t = setTimeout(function () { runSearch(searchInput.value); }, 220);
+    });
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); gotoHit(e.shiftKey ? -1 : 1); }
+    });
+  }
+  var hitPrev = document.getElementById('tb-hit-prev'), hitNext = document.getElementById('tb-hit-next');
+  if (hitPrev) hitPrev.addEventListener('click', function () { gotoHit(-1); });
+  if (hitNext) hitNext.addEventListener('click', function () { gotoHit(1); });
+
+  // ===== Toggle por patch: Diff / Arquivo inteiro =====
+  document.querySelectorAll('.filetoggle').forEach(function (group) {
+    group.addEventListener('click', function (e) {
+      var btn = e.target.closest('.ft-btn');
+      if (!btn) return;
+      group.querySelectorAll('.ft-btn').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      // "arquivo inteiro" é visão de código-fonte; se estava no rich, volta.
+      if (isRich()) { PREFS.view = 'inline'; savePrefs(); applyPrefs(); }
+      renderArticle(group.closest('.patch'));
+      updateNavButtons();   // "arquivo inteiro" não tem hunks para navegar
+      if (store.threads.length) { autoRevealAll(); renderThreads(); }
+      if (search.q) runSearch(search.q);
+    });
+  });
+
+  // ===== Expand de contexto + comentário pela linha (delegação no card) =====
+  document.querySelectorAll('.patch').forEach(function (article) {
+    article.addEventListener('click', function (e) {
+      var expandBtn = e.target.closest('.expand-row');
+      if (expandBtn) {
+        var hunkEl = expandBtn.closest('.hunk');
+        var fileKey = article.getAttribute('data-file-key');
+        var hunk = PATCHES[fileKey][parseInt(hunkEl.getAttribute('data-hunk'), 10)];
+        initHunkState(fileKey, hunk);
+        var up = expandBtn.getAttribute('data-expand') === 'up';
+        if (up) hunk._top = Math.max(1, hunk._top - EXPAND_STEP);
+        else hunk._bottom = Math.min(FILES[fileKey].length, hunk._bottom + EXPAND_STEP);
+        hunkEl.innerHTML = renderHunk(fileKey, hunk, article.id);
+        if (store.threads.length) renderThreads();   // o hunk foi refeito
+        if (search.q) {
+          search.hits = Array.prototype.slice.call(document.querySelectorAll('mark.hit'));
+          var c = document.getElementById('tb-search-count');
+          if (c) c.textContent = search.hits.length ? (Math.max(search.idx, 0) + 1) + '/' + search.hits.length : 'nada';
+        }
+        announce(EXPAND_STEP + (up ? ' linhas acima' : ' linhas abaixo') + ' exibidas');
+        return;
+      }
+      var g = e.target.closest('.gutter-add');
+      if (g) { openComposer(g.getAttribute('data-patch'), g.getAttribute('data-line')); return; }
+
+      // Clicar no NÚMERO da linha também abre o comentário — o cursor e o
+      // sublinhado no hover já prometiam isso.
+      var rc = e.target.closest('.rd-comment');
+      if (rc) { openComposer(rc.getAttribute('data-patch'), rc.getAttribute('data-line')); return; }
+
+      var rl = e.target.closest('.rd-ln[data-jump]');
+      if (rl) { jumpToSource(rl.getAttribute('data-patch'), rl.getAttribute('data-line')); return; }
+
+      var ln = e.target.closest('.ln');
+      if (ln) {
+        var line = ln.getAttribute('data-line');
+        if (line) openComposer(article.id, line);
+      }
+    });
+  });
+
+  // ===================================================================
+  // Threads: estado persistido em data/threads.json (files form do
+  // artifact.publish) + respostas do agente vindas do HTML.
+  //
+  // Cada lado escreve num lugar só:
+  //   você      → data/threads.json  (a página salva)
+  //   o agente  → #agent-replies no HTML (republicado pelo Claude Code)
+  // Por isso não há conflito de escrita entre os dois.
+  // ===================================================================
+
+  var THREADS_FILE = 'data/threads.json';
+  var STATUS_CYCLE = ['aberto', 'respondido', 'resolvido'];
+
+  var store = { v: 1, threads: [] };   // o que a página salva
+  var replies = [];                    // respostas do agente (só leitura)
+  var artifactApi = null;              // namespace da capability, se disponível
+  var saveState = 'idle';              // idle | dirty | saving | saved | local | error
+  var saveTimer = null;
+
+  function loadAgentReplies() {
+    var el = document.getElementById('agent-replies');
+    if (!el) return [];
+    try {
+      var parsed = JSON.parse(el.textContent || '{}');
+      return Array.isArray(parsed.replies) ? parsed.replies : [];
+    } catch (e) { return []; }
+  }
+
+  function newId() {
+    return 't-' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36);
+  }
+
+  function nowIso() { return new Date().toISOString(); }
+
+  function fmtStamp(iso) {
+    try {
+      var d = new Date(iso);
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return iso || ''; }
+  }
+
+  // ---- Persistência -------------------------------------------------
+
+  function setSaveState(s, detail) {
+    saveState = s;
+    var chip = document.getElementById('tb-save');
+    if (!chip) return;
+    var text = {
+      idle: '', dirty: 'não salvo', saving: 'salvando…', saved: 'salvo',
+      local: 'só nesta aba', error: 'falha ao salvar'
+    }[s] || '';
+    chip.textContent = text;
+    chip.dataset.state = s;
+    chip.hidden = !text;
+    if (detail) chip.title = detail;
+  }
+
+  function scheduleSave() {
+    setSaveState('dirty');
+    clearTimeout(saveTimer);
+    // Todo publish cria uma versão: nunca por keystroke, sempre em lote.
+    saveTimer = setTimeout(saveThreads, 1200);
+  }
+
+  function saveThreads() {
+    if (!artifactApi) { setSaveState('local', 'A página não pode salvar aqui; use "copiar threads".'); return; }
+    setSaveState('saving');
+    var payload = {};
+    payload[THREADS_FILE] = JSON.stringify(store, null, 2);
+    artifactApi.publish(payload).then(function () {
+      setSaveState('saved', 'Threads salvas no artefato.');
+      announce('Comentários salvos');
+    }).catch(function (err) {
+      var code = err && err.code;
+      if (code === 'conflict') {
+        // Outra aba salvou antes. Nesta form a view não recarrega, então
+        // reaplicamos em cima do que está publicado agora.
+        setSaveState('dirty', 'Outra aba salvou antes; reaplicando.');
+        hydrate(true).then(function () { scheduleSave(); });
+        return;
+      }
+      if (code === 'not_writer' || code === 'not_granted' || code === 'not_declared' ||
+          code === 'capability_disabled' || code === 'capability_removed' || code === 'consent_required') {
+        artifactApi = null;
+        setSaveState('local', 'Esta visualização é somente leitura; as threads ficam nesta aba.');
+        return;
+      }
+      if (code === 'rate_limited') {
+        setSaveState('dirty', 'Muitas gravações; aguardando.');
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveThreads, 8000);
+        return;
+      }
+      if (code === 'too_large') {
+        // Quase sempre é o acúmulo de imagens: elas vão como data URI dentro
+        // do JSON. Diz isso em vez de "erro", que não ajuda ninguém.
+        var shots = store.threads.reduce(function (n, t) {
+          return n + (t.msgs || []).reduce(function (k, m) { return k + ((m.images && m.images.length) || 0); }, 0);
+        }, 0);
+        setSaveState('error', 'Threads grandes demais para salvar' +
+          (shots ? ' — ' + shots + ' imagem(ns) anexada(s). Remova alguma e tente de novo.' : '.'));
+        return;
+      }
+      setSaveState('error', (err && err.message) || 'Erro ao salvar.');
+    });
+  }
+
+  function loadSeed() {
+    var el = document.getElementById('seed-threads');
+    if (!el) return [];
+    try {
+      var parsed = JSON.parse(el.textContent || '{}');
+      return Array.isArray(parsed.threads) ? parsed.threads : [];
+    } catch (e) { return []; }
+  }
+
+  /**
+   * Funde a semente do HTML com o arquivo de dados. Mesma thread (id) pode
+   * existir nas duas fontes: fica a que tem mais mensagens, e as mensagens são
+   * unidas com dedupe por (at + text) — a semente pode estar defasada em
+   * relação ao que a página salvou depois de copiar o JSON.
+   */
+  function mergeThreads(seed, fetched) {
+    var byId = {};
+    (seed || []).forEach(function (t) { byId[t.id] = JSON.parse(JSON.stringify(t)); });
+
+    (fetched || []).forEach(function (t) {
+      var cur = byId[t.id];
+      if (!cur) { byId[t.id] = t; return; }
+      // Dedupe por (at + text) SÓ. A semente nunca traz imagens — incluí-las na
+      // chave faria a mesma mensagem contar como duas.
+      var byKey = {};
+      var order = [];
+      (cur.msgs || []).concat(t.msgs || []).forEach(function (m) {
+        var k = (m.at || '') + '|' + (m.text || '');
+        if (!byKey[k]) { byKey[k] = m; order.push(k); return; }
+        // duplicata: mantém a versão que tem imagens
+        if (m.images && m.images.length && !(byKey[k].images || []).length) byKey[k] = m;
+      });
+      cur.msgs = order.map(function (k) { return byKey[k]; })
+        .sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
+      // status: o do arquivo é mais recente que o da semente
+      if (t.status) cur.status = t.status;
+      if (t.statusAt) cur.statusAt = t.statusAt;   // preserva a reabertura manual
+      if (t.lineText && !cur.lineText) cur.lineText = t.lineText;  // âncora original
+      byId[t.id] = cur;
+    });
+
+    return Object.keys(byId).map(function (k) { return byId[k]; });
+  }
+
+  function hydrate(force) {
+    // Após um publish nesta view, URLs relativas ainda servem a versão que ela
+    // carregou — por isso só buscamos no load (ou em conflito explícito).
+    var seed = loadSeed();
+    return fetch(THREADS_FILE, { cache: force ? 'reload' : 'default' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        var fetched = (data && Array.isArray(data.threads)) ? data.threads : [];
+        store = { v: 1, threads: mergeThreads(seed, fetched) };
+        // A semente trouxe algo que o arquivo não tinha (ex: o arquivo foi
+        // perdido na republicação) → consolida de volta no arquivo.
+        if (seed.length && seed.length > fetched.length) scheduleSave();
+      })
+      .catch(function () {
+        store = { v: 1, threads: mergeThreads(seed, []) };
+        if (seed.length) scheduleSave();
+      });
+  }
+
+  // ---- Render -------------------------------------------------------
+
+  function hostKeyOf(host) {
+    return host.getAttribute('data-scope') === 'review'
+      ? '__review__'
+      : (host.getAttribute('data-path') || host.id);
+  }
+
+  function threadsOf(hostKey) {
+    return store.threads.filter(function (t) { return t.file === hostKey; })
+      .sort(function (a, b) {
+        var la = a.line == null ? -1 : a.line, lb = b.line == null ? -1 : b.line;
+        return la - lb || String(a.id).localeCompare(String(b.id));
+      });
+  }
+
+  function messagesOf(t) {
+    var mine = (t.msgs || []).slice();
+    replies.filter(function (r) { return r.threadId === t.id; }).forEach(function (r) {
+      mine.push({ author: r.author || 'Claude', role: 'agent', at: r.at, text: r.text, action: r.action });
+    });
+    return mine.sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
+  }
+
+  /**
+   * Status efetivo: vence quem mexeu POR ÚLTIMO — agente ou você.
+   * Antes o agente ganhava sempre, e por isso era impossível reabrir uma thread
+   * que ele havia resolvido (o clique no pill não tinha efeito visível).
+   */
+  function statusOf(t) {
+    var fromAgent = replies.filter(function (r) { return r.threadId === t.id && r.status; })
+      .sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); }).pop();
+    if (!fromAgent) return t.status || 'aberto';
+    if (!t.status) return fromAgent.status;
+    // t.statusAt existe quando você mudou o status manualmente
+    if (t.statusAt && String(t.statusAt) > String(fromAgent.at)) return t.status;
+    return fromAgent.status;
+  }
+
+  // ===== Estado da âncora (padrão GitHub "Outdated") =====
+  //
+  // A thread guarda o TEXTO da linha no momento do comentário (`lineText`).
+  // Se o arquivo mudou, esse texto é o único jeito de saber se o comentário
+  // ainda fala do que parece falar. Três estados:
+  //   ok       — a linha ancorada tem o mesmo conteúdo
+  //   moved    — o conteúdo está em outra linha (achamos onde)
+  //   outdated — o conteúdo não existe mais no arquivo
+
+  /** data-path → data-file-key, lido do DOM (só os cards têm essa ligação). */
+  var pathToKey = (function () {
+    var m = {};
+    document.querySelectorAll('.patch[data-file-key]').forEach(function (a) {
+      m[a.getAttribute('data-path')] = a.getAttribute('data-file-key');
+    });
+    return m;
+  })();
+
+  /**
+   * Linha citada na correção, se a resposta do agente apontar para o MESMO
+   * arquivo da thread. É o que permite reancorar a thread onde a correção
+   * ficou — depois de resolvido, o interesse deixa de ser "onde eu comentei" e
+   * passa a ser "onde ficou o conserto".
+   */
+  function fixLineFor(t) {
+    var mine = replies.filter(function (r) { return r.threadId === t.id && r.action; })
+      .sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
+    for (var i = mine.length - 1; i >= 0; i--) {
+      var re = /([\w./-]+\.[A-Za-z0-9]+):(\d+)/g, m;
+      while ((m = re.exec(mine[i].action)) !== null) {
+        var f = m[1], tf = String(t.file);
+        if (tf === f || tf.endsWith('/' + f) || f.endsWith(tf)) return parseInt(m[2], 10);
+      }
+    }
+    return null;
+  }
+
+  /** Onde a thread deve ser ancorada AGORA: a correção vence o original. */
+  function anchorLineOf(t) {
+    var fix = fixLineFor(t);
+    return fix != null ? fix : t.line;
+  }
+
+  function anchorState(t) {
+    if (t.line == null || !t.lineText) return { state: 'ok' };
+    var key = pathToKey[t.file];
+    var lines = key && FILES[key];
+    if (!lines) return { state: 'ok' };
+
+    var current = lines[t.line - 1];
+    if (current === t.lineText) return { state: 'ok' };
+
+    var nearest = function (hits) {
+      return hits.reduce(function (a, b) {
+        return Math.abs(b - t.line) < Math.abs(a - t.line) ? b : a;
+      });
+    };
+
+    // 1. conteúdo idêntico em outra posição → a linha apenas se deslocou
+    var exact = [];
+    for (var i = 0; i < lines.length; i++) if (lines[i] === t.lineText) exact.push(i + 1);
+    if (exact.length) return { state: 'moved', to: nearest(exact) };
+
+    // 2. mesmo conteúdo com indentação diferente (reindentação, mudança de
+    //    aninhamento) — continua sendo a mesma linha, vale apontar
+    var target = t.lineText.trim();
+    if (target) {
+      var loose = [];
+      for (var j = 0; j < lines.length; j++) if (lines[j].trim() === target) loose.push(j + 1);
+      if (loose.length) return { state: 'moved', to: nearest(loose) };
+    }
+
+    // 3. o conteúdo não existe mais: o comentário perdeu o referente
+    return { state: 'outdated' };
+  }
+
+  /**
+   * Clique num "arquivo:linha" citado numa resposta. Acha o card daquele
+   * arquivo — mesmo que o caminho citado seja parcial — e vai até a linha,
+   * abrindo o arquivo inteiro se a linha não estiver no diff.
+   */
+  function gotoFileLine(ev) {
+    var file = ev.currentTarget.dataset.file;
+    var line = ev.currentTarget.dataset.line;
+    var card = null;
+    document.querySelectorAll('.patch[data-path]').forEach(function (a) {
+      if (card) return;
+      var pathAttr = a.getAttribute('data-path');
+      if (pathAttr === file || pathAttr.endsWith('/' + file) || file.endsWith(pathAttr)) card = a;
+    });
+    if (!card) { announce('Arquivo ' + file + ' não está neste review'); return; }
+    if (card.classList.contains('collapsed')) setCollapsed(card, false);
+    jumpToSource(card.id, line);
+  }
+
+  /**
+   * Edição in-place. Não re-renderiza a thread ao abrir: o textarea vive no lugar do
+   * parágrafo, então um rascunho de edição não é perdido por qualquer outro render.
+   */
+  function startEdit(el, m, t) {
+    if (el.querySelector('.msg-edit')) return;              // já em edição
+    var body = el.querySelector('.msg-text');
+    var box = document.createElement('div');
+    box.className = 'msg-edit';
+
+    var ta = document.createElement('textarea');
+    ta.value = m.text || '';
+    ta.rows = Math.min(12, Math.max(2, String(m.text || '').split('\n').length + 1));
+    box.appendChild(ta);
+
+    var row = document.createElement('div');
+    row.className = 'msg-edit-row';
+    var save = document.createElement('button');
+    save.type = 'button'; save.className = 'btn-mini go'; save.textContent = 'Salvar';
+    var cancel = document.createElement('button');
+    cancel.type = 'button'; cancel.className = 'btn-mini'; cancel.textContent = 'Cancelar';
+    row.appendChild(save); row.appendChild(cancel);
+    box.appendChild(row);
+
+    function close() {
+      box.remove();
+      if (body) body.hidden = false;
+    }
+    cancel.addEventListener('click', close);
+    save.addEventListener('click', function () {
+      var v = ta.value.trim();
+      if (!v) { announce('Mensagem vazia não é salva; use remover'); ta.focus(); return; }
+      if (v === (m.text || '')) { close(); return; }         // nada mudou: não marca "editado"
+      m.text = v;
+      m.editedAt = nowIso();
+      scheduleSave();
+      renderThreads();
+      announce('Mensagem editada');
+    });
+    // Esc cancela, Ctrl+Enter salva — o textarea precisa do Enter para newline.
+    ta.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') { ev.preventDefault(); close(); }
+      else if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); save.click(); }
+    });
+
+    if (body) body.hidden = true;
+    if (body && body.parentNode) body.parentNode.insertBefore(box, body.nextSibling);
+    else el.appendChild(box);
+    ta.focus();
+  }
+
+  /**
+   * Remover mensagem. Se era a última SUA numa thread, a thread inteira vai com ela:
+   * thread sem mensagem própria fica como âncora fantasma no diff, e a resposta do
+   * agente que sobrasse não teria a que responder.
+   */
+  function removeMsg(m, t) {
+    var i = (t.msgs || []).indexOf(m);
+    if (i < 0) return;
+
+    t.msgs.splice(i, 1);
+    if (!t.msgs.length) {
+      var k = store.threads.indexOf(t);
+      if (k >= 0) store.threads.splice(k, 1);
+      announce('Thread removida');
+    } else {
+      announce('Mensagem removida');
+    }
+    scheduleSave();
+    renderThreads();
+    if (typeof updateThreadNav === 'function') updateThreadNav();
+  }
+
+  function msgEl(m, t) {
+    var isAgent = m.role === 'agent';
+    // Só mensagem sua é editável: a do agente vem de #agent-replies, que a página
+    // não escreve — editá-la seria desfeito na próxima republicação dele.
+    var idx = (t && !isAgent && t.msgs) ? t.msgs.indexOf(m) : -1;
+    var podeMexer = idx >= 0;
+    var el = document.createElement('div');
+    el.className = 'msg';
+    el.dataset.role = m.role || 'human';
+
+    // Uso de uma pessoa só: quem escreveu é "você" ou o agente. Sem campo de nome.
+    var head = document.createElement('div');
+    head.className = 'msg-head';
+    var who = document.createElement('span');
+    who.className = 'msg-author';
+    who.textContent = isAgent ? (m.author || 'Claude') : 'você';
+    head.appendChild(who);
+    if (isAgent) {
+      var badge = document.createElement('span');
+      badge.className = 'author-badge';
+      badge.textContent = 'agente';
+      head.appendChild(badge);
+    }
+    var when = document.createElement('span');
+    when.className = 'msg-time';
+    when.textContent = fmtStamp(m.at);
+    head.appendChild(when);
+
+    if (m.editedAt) {
+      var ed = document.createElement('span');
+      ed.className = 'msg-edited';
+      ed.textContent = 'editado';
+      ed.title = 'editado em ' + fmtStamp(m.editedAt);
+      head.appendChild(ed);
+    }
+
+    if (podeMexer) {
+      var acts = document.createElement('span');
+      acts.className = 'msg-acts';
+
+      var bEd = document.createElement('button');
+      bEd.type = 'button';
+      bEd.className = 'msg-act';
+      bEd.textContent = 'editar';
+      bEd.title = 'Editar esta mensagem';
+      bEd.addEventListener('click', function () { startEdit(el, m, t); });
+      acts.appendChild(bEd);
+
+      // Confirmação em DOIS CLIQUES, não window.confirm: o artefato roda em iframe
+      // sandbox, onde modal nativo pode ser bloqueado — e aí a remoção falharia em
+      // silêncio, que é pior que não ter o botão.
+      var ultima = t.msgs.length === 1;
+      var bRm = document.createElement('button');
+      bRm.type = 'button';
+      bRm.className = 'msg-act danger';
+      bRm.textContent = 'remover';
+      bRm.title = ultima ? 'Remover — é a única mensagem, a thread vai com ela'
+                         : 'Remover esta mensagem';
+      var armado = null;
+      function desarmar() {
+        clearTimeout(armado); armado = null;
+        bRm.textContent = 'remover';
+        bRm.classList.remove('armed');
+        if (bCancel) bCancel.hidden = true;
+      }
+      var bCancel = document.createElement('button');
+      bCancel.type = 'button';
+      bCancel.className = 'msg-act';
+      bCancel.textContent = 'não';
+      bCancel.hidden = true;
+      bCancel.addEventListener('click', desarmar);
+
+      bRm.addEventListener('click', function () {
+        if (armado) { removeMsg(m, t); return; }
+        bRm.textContent = ultima ? 'apagar thread?' : 'confirmar?';
+        bRm.classList.add('armed');
+        bCancel.hidden = false;
+        announce(ultima ? 'Confirme para apagar a thread' : 'Confirme para remover a mensagem');
+        armado = setTimeout(desarmar, 6000);   // não fica armado indefinidamente
+      });
+      acts.appendChild(bRm);
+      acts.appendChild(bCancel);
+
+      head.appendChild(acts);
+    }
+    el.appendChild(head);
+
+    if (m.text) {
+      var body = document.createElement('p');
+      body.className = 'msg-text';
+      body.textContent = m.text;
+      el.appendChild(body);
+    }
+
+    // imagens coladas (data URI)
+    if (m.images && m.images.length) {
+      var shots = document.createElement('div');
+      shots.className = 'msg-shots';
+      m.images.forEach(function (src) {
+        var a = document.createElement('a');
+        a.href = src;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.title = 'Abrir em tamanho real';
+        var img = document.createElement('img');
+        img.src = src;
+        img.alt = 'Imagem colada no comentário';
+        a.appendChild(img);
+        shots.appendChild(a);
+      });
+      el.appendChild(shots);
+    }
+
+    if (m.action) {
+      var act = document.createElement('p');
+      act.className = 'msg-action';
+      // "arquivo.ext:123" e "arquivo.ext:123-456" viram link para a linha —
+      // citar o número sem levar até ele deixa o trabalho de achar com quem lê.
+      var re = /([\w./-]+\.[A-Za-z0-9]+):(\d+)(?:-(\d+))?/g;
+      var last = 0, mm;
+      while ((mm = re.exec(m.action)) !== null) {
+        if (mm.index > last) act.appendChild(document.createTextNode(m.action.slice(last, mm.index)));
+        var a = document.createElement('button');
+        a.type = 'button';
+        a.className = 'action-link';
+        a.textContent = mm[0];
+        a.dataset.file = mm[1];
+        a.dataset.line = mm[2];
+        a.title = 'Ir para ' + mm[1] + ' linha ' + mm[2];
+        a.addEventListener('click', gotoFileLine);
+        act.appendChild(a);
+        last = mm.index + mm[0].length;
+      }
+      if (last < m.action.length) act.appendChild(document.createTextNode(m.action.slice(last)));
+      el.appendChild(act);
+    }
+    return el;
+  }
+
+  function threadEl(t) {
+    var status = statusOf(t);
+    var el = document.createElement('article');
+    el.className = 'thread';
+    el.dataset.status = status;
+    el.dataset.threadId = t.id;
+
+    var meta = document.createElement('div');
+    meta.className = 'thread-meta';
+    var tag = document.createElement('span');
+    tag.className = 'thread-line-tag';
+    if (t.line != null) {
+      var at = anchorLineOf(t);
+      tag.textContent = at !== t.line ? ('linha ' + at + ' · era ' + t.line) : ('linha ' + t.line);
+      if (at !== t.line) tag.title = 'reancorada na linha da correção; comentada originalmente na linha ' + t.line;
+    } else {
+      tag.textContent = t.file === '__review__' ? 'review geral' : 'arquivo geral';
+    }
+    meta.appendChild(tag);
+
+    // âncora envelhecida: marca e, se possível, diz para onde a linha foi
+    var anchor = anchorState(t);
+    if (anchor.state === 'moved') {
+      var moved = document.createElement('span');
+      moved.className = 'anchor-tag moved';
+      moved.title = 'O conteúdo desta linha está agora na linha ' + anchor.to;
+      var go = document.createElement('button');
+      go.type = 'button';
+      go.textContent = '→ linha ' + anchor.to;
+      go.addEventListener('click', function () {
+        var host = document.getElementById('file-' + pathToKey[t.file]);
+        var target = host && host.querySelector('.ln[data-line="' + anchor.to + '"]');
+        if (target) {
+          target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          var row = target.closest('.diff-line, .fullfile-line');
+          if (row) { row.classList.add('hl'); setTimeout(function () { row.classList.remove('hl'); }, 1600); }
+        } else {
+          announce('A linha ' + anchor.to + ' não está visível no diff — expanda o contexto ou veja o arquivo inteiro');
+        }
+      });
+      moved.appendChild(go);
+      meta.appendChild(moved);
+    } else if (anchor.state === 'outdated') {
+      var out = document.createElement('span');
+      out.className = 'anchor-tag outdated';
+      out.textContent = 'desatualizada';
+      out.title = 'A linha comentada não existe mais com esse conteúdo';
+      meta.appendChild(out);
+      el.classList.add('outdated');
+    }
+
+    var idTag = document.createElement('span');
+    idTag.className = 'thread-id';
+    idTag.textContent = t.id;
+    idTag.title = 'Identificador da thread — é por ele que o agente responde';
+    meta.appendChild(idTag);
+
+    var pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'status-pill';
+    pill.dataset.status = status;
+    pill.textContent = status;
+    pill.title = 'Clique para alternar: aberto → respondido → resolvido';
+    pill.addEventListener('click', function () {
+      var i = STATUS_CYCLE.indexOf(statusOf(t));
+      t.status = STATUS_CYCLE[(i + 1) % STATUS_CYCLE.length];
+      t.statusAt = nowIso();   // marca QUANDO você mexeu, para vencer o agente
+      scheduleSave();
+      renderThreads();
+      announce('Thread ' + t.id + ': ' + t.status);
+    });
+    meta.appendChild(pill);
+    el.appendChild(meta);
+
+    // Snippet: a linha como ela era quando o comentário foi feito. Sem isto, um
+    // comentário sobre código que já mudou fica sem referente.
+    if (anchor.state !== 'ok') {
+      var snip = document.createElement('pre');
+      snip.className = 'thread-snippet';
+      var lbl = document.createElement('span');
+      lbl.className = 'lbl';
+      lbl.textContent = anchor.state === 'moved'
+        ? 'comentado sobre esta linha (hoje na linha ' + anchor.to + ')'
+        : 'comentado sobre esta linha, que já não existe assim';
+      snip.appendChild(lbl);
+      var code = document.createElement(anchor.state === 'outdated' ? 'del' : 'span');
+      code.textContent = t.lineText;
+      snip.appendChild(code);
+      el.appendChild(snip);
+    }
+
+    if (answeredByAgent(t)) el.dataset.answered = '1';
+
+    var msgs = document.createElement('div');
+    msgs.className = 'thread-msgs';
+    messagesOf(t).forEach(function (m) { msgs.appendChild(msgEl(m, t)); });
+    el.appendChild(msgs);
+
+    var row = document.createElement('div');
+    row.className = 'reply-row';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Responder…';
+    var send = document.createElement('button');
+    send.type = 'button';
+    send.className = 'ghost';
+    send.textContent = 'Enviar';
+    var replyShots = [];
+    var replyShotsEl = document.createElement('div');
+    replyShotsEl.className = 'composer-shots';
+    wirePaste(input, replyShotsEl, replyShots);
+
+    function doReply() {
+      var v = input.value.trim();
+      if (!v && !replyShots.length) return;
+      t.msgs = t.msgs || [];
+      t.msgs.push({ role: 'human', at: nowIso(), text: v, images: replyShots.slice() });
+      input.value = '';
+      replyShots.length = 0;
+      scheduleSave();
+      renderThreads();
+      announce('Resposta adicionada na thread ' + t.id);
+    }
+    send.addEventListener('click', doReply);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); doReply(); } });
+    row.appendChild(input);
+    row.appendChild(send);
+    el.appendChild(row);
+    el.appendChild(replyShotsEl);
+
+    return el;
+  }
+
+  /**
+   * Acha onde ancorar uma linha no card, conforme o modo de exibição.
+   * Devolve o elemento APÓS o qual o comentário deve entrar, ou null se a linha
+   * não está visível (fora do trecho exibido, por exemplo).
+   */
+  function anchorFor(article, line) {
+    var body = article.querySelector('.diffbody');
+    if (!body || line == null) return null;
+
+    // rich diff: bloco do markdown que cobre a linha
+    if (isRich()) {
+      var blk = body.querySelector('.richdiff [data-line="' + line + '"]');
+      if (blk) return blk;
+      // pode estar dentro do intervalo de um bloco (tabela, code fence)
+      var all = body.querySelectorAll('.richdiff [data-line][data-line-end]');
+      for (var i = 0; i < all.length; i++) {
+        var a = +all[i].getAttribute('data-line'), b = +all[i].getAttribute('data-line-end');
+        if (line >= a && line <= b) return all[i];
+      }
+      return null;
+    }
+
+    // arquivo inteiro
+    var full = body.querySelector('.fullfile-line .ln[data-line="' + line + '"]');
+    if (full) return full.closest('.fullfile-line');
+
+    // side-by-side: abaixo do par de colunas, não dentro de uma delas
+    if (PREFS.view === 'split') {
+      var side = body.querySelector('.diff-split .ln[data-line="' + line + '"]');
+      if (side) return side.closest('.diff-split');
+      return null;
+    }
+
+    // inline / modified: logo após a própria linha
+    var ln = body.querySelector('.hunk > .diff-line .ln[data-line="' + line + '"]');
+    return ln ? ln.closest('.diff-line') : null;
+  }
+
+  /**
+   * Insere as threads de LINHA dentro do diff, ancoradas na linha — é o modelo
+   * do GitLab. Antes todas viviam numa lista no pé do card, longe do código a
+   * que se referem. Devolve os ids que não couberam (linha fora do trecho
+   * exibido), para a seção do pé cuidar deles.
+   */
+  function mountInlineThreads(article) {
+    article.querySelectorAll('.inline-slot').forEach(function (el) {
+      if (!el.querySelector('.composer')) el.remove();   // preserva composer aberto
+    });
+
+    var orphans = [];
+    if (!article.getAttribute('data-file-key')) return orphans;
+
+    threadsOf(hostKeyOf(article))
+      .filter(function (t) { return t.line != null; })
+      .forEach(function (t) {
+        var at = anchorLineOf(t);
+        var after = anchorFor(article, at);
+        if (!after) { orphans.push(t.id); return; }
+
+        var slot = document.createElement('div');
+        slot.className = 'inline-slot';
+        slot.dataset.line = at;
+
+        var anchor = document.createElement('div');
+        anchor.className = 'inline-anchor';
+        if (at !== t.line) {
+          anchor.innerHTML = 'reancorado na correção — linha <b>' + at + '</b>' +
+            ' <span class="anchor-from">(comentado na linha ' + t.line + ')</span>';
+        } else {
+          anchor.innerHTML = 'comentário na linha <b>' + t.line + '</b>';
+        }
+        slot.appendChild(anchor);
+        slot.appendChild(threadEl(t));
+
+        after.parentNode.insertBefore(slot, after.nextSibling);
+      });
+
+    return orphans;
+  }
+
+  /**
+   * Traz para o diff um comentário cuja linha não está no trecho exibido:
+   * abre o arquivo inteiro daquele card (que tem todas as linhas) e reancora as
+   * threads. Sem isto, o comentário ficava no pé sem caminho de volta.
+   */
+  /**
+   * Traz para o diff os comentários cujas linhas não estão no trecho exibido —
+   * expandindo o contexto dos hunks, sem nunca abrir o arquivo inteiro.
+   */
+  function revealOffscreen(article, threads) {
+    var list = Array.isArray(threads) ? threads : [threads];
+    var total = 0;
+
+    if (isRich()) { PREFS.view = 'inline'; savePrefs(); applyPrefs(); }
+    var dif = article.querySelector('.ft-btn[data-ft="diff"]');
+    if (dif && !dif.classList.contains('active')) {
+      article.querySelectorAll('.ft-btn').forEach(function (b) { b.classList.toggle('active', b === dif); });
+      renderPatchDiff(article);
+    }
+
+    list.forEach(function (t) {
+      if (!t || t.line == null) return;
+      var n = expandUntilVisible(article, anchorLineOf(t));
+      if (n > 0) total += n;
+    });
+
+    renderThreads();
+    updateNavButtons();
+    if (search.q) runSearch(search.q);
+    if (list[0]) gotoThread(list[0].id);
+
+    if (total > 0) {
+      showToast('Contexto expandido',
+        total + ' linhas de contexto abertas para ancorar ' +
+        (list.length === 1 ? 'o comentário' : 'os comentários') + ' no diff.', 5000);
+    }
+    announce('Comentários ancorados no diff após expandir contexto');
+  }
+
+  /**
+   * Expande o contexto de todo hunk que precise, para que NENHUMA thread de
+   * linha caia na lista do pé. Roda antes de montar as threads — a lista "fora
+   * do trecho" era um passo manual sem propósito: se sempre dá para expandir,
+   * a página deve chegar pronta.
+   * Só atua no modo diff; rich e "arquivo inteiro" não têm hunks.
+   */
+  function autoRevealAll() {
+    if (isRich()) return 0;
+    var revealed = 0;
+    document.querySelectorAll('.patch[data-file-key]').forEach(function (article) {
+      var ft = article.querySelector('.ft-btn.active');
+      if (ft && ft.getAttribute('data-ft') === 'full') return;   // escolha manual do usuário
+      threadsOf(hostKeyOf(article))
+        .filter(function (t) { return t.line != null; })
+        .forEach(function (t) {
+          var at = anchorLineOf(t);                                // correção vence
+          if (anchorFor(article, at)) return;                      // já visível
+          var n = expandUntilVisible(article, at);
+          if (n > 0) revealed += n;
+        });
+    });
+    return revealed;
+  }
+
+  function renderThreads() {
+    // O re-render recria as threads; sem isto, um rascunho de resposta em
+    // outra thread seria apagado por qualquer mudança de estado.
+    var drafts = {};
+    document.querySelectorAll('.thread').forEach(function (el) {
+      var input = el.querySelector('.reply-row input');
+      if (input && input.value) drafts[el.dataset.threadId] = input.value;
+    });
+
+    document.querySelectorAll('.patch, .review-summary').forEach(function (host) {
+      var list = host.querySelector('.thread-list');
+      if (!list) return;
+
+      // Threads de linha vão INLINE, dentro do diff. Sobram para o pé duas
+      // coisas DIFERENTES, que antes eu misturava sob "escopo geral":
+      //   • as sem linha  → escopo geral de verdade
+      //   • as com linha fora do trecho exibido → precisam de caminho de volta
+      var orphanIds = host.classList.contains('patch') ? mountInlineThreads(host) : [];
+      var all = threadsOf(hostKeyOf(host));
+      var generals = all.filter(function (t) { return t.line == null; });
+      var offscreen = all.filter(function (t) {
+        return t.line != null && orphanIds.indexOf(t.id) !== -1;
+      });
+      var items = generals.concat(offscreen);
+
+      list.textContent = '';
+
+      function put(t, into) {
+        var el = threadEl(t);
+        if (drafts[t.id]) {
+          var input = el.querySelector('.reply-row input');
+          if (input) input.value = drafts[t.id];
+        }
+        into.appendChild(el);
+      }
+
+      generals.forEach(function (t) { put(t, list); });
+
+      if (offscreen.length) {
+        var grp = document.createElement('div');
+        grp.className = 'offscreen-group';
+
+        var note = document.createElement('p');
+        note.className = 'offscreen-note';
+        // Caso residual: a expansão automática cobre praticamente tudo. Sobra
+        // aqui o que ela não alcançou (por ex. card em "arquivo inteiro").
+        note.textContent = offscreen.length +
+          (offscreen.length === 1
+            ? ' comentário não pôde ser ancorado no trecho exibido.'
+            : ' comentários não puderam ser ancorados no trecho exibido.');
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ghost';
+        btn.textContent = 'Ancorar no diff';
+        btn.title = 'Expande o contexto dos hunks e ancora os comentários nas linhas';
+        btn.addEventListener('click', function () {
+          revealOffscreen(host, offscreen);
+        });
+        note.appendChild(btn);
+        grp.appendChild(note);
+
+        offscreen.forEach(function (t) { put(t, grp); });
+        list.appendChild(grp);
+      }
+      var head = host.querySelector('.discussion-head h4');
+      if (head) {
+        var inline = host.querySelectorAll('.inline-slot .thread').length;
+        var isReview = host.getAttribute('data-scope') === 'review';
+        if (isReview) {
+          head.textContent = items.length ? 'Threads do review · ' + items.length : 'Threads do review';
+        } else {
+          // Rótulo diz o que cada grupo É. Chamar "escopo geral" uma thread que
+          // tem linha (só não visível) é rótulo errado.
+          var parts = [];
+          if (generals.length) parts.push(generals.length + ' de escopo geral');
+          if (offscreen.length) parts.push(offscreen.length + ' fora do trecho');
+          if (inline) parts.push(inline + ' no diff acima');
+          head.textContent = parts.length ? parts.join(' · ') : 'Discussão';
+        }
+      }
+    });
+
+    // O filtro tem de se reaplicar a cada render, senão volta tudo à vista.
+    if (typeof applyThreadFilter === 'function') applyThreadFilter();
+    if (typeof renderThreadIndex === 'function') renderThreadIndex();
+    if (typeof updateThreadNav === 'function') updateThreadNav();
+  }
+
+  // ---- Composer -----------------------------------------------------
+
+  // ---- Imagens coladas ----------------------------------------------
+
+  var MAX_SHOT_PX = 1400;      // redimensiona antes de guardar
+  var MAX_SHOT_BYTES = 900000; // ~0.9MB por imagem no JSON
+
+  /** Converte um blob de imagem em data URI, reduzindo se for grande. */
+  function shrinkImage(blob) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(blob);
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, MAX_SHOT_PX / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+        var c = document.createElement('canvas');
+        c.width = cw; c.height = ch;
+        c.getContext('2d').drawImage(img, 0, 0, cw, ch);
+        URL.revokeObjectURL(url);
+        var out = c.toDataURL('image/png');
+        if (out.length > MAX_SHOT_BYTES) out = c.toDataURL('image/jpeg', 0.82);
+        resolve(out);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('imagem inválida')); };
+      img.src = url;
+    });
+  }
+
+  /** Liga Ctrl+V de imagem a um alvo, acumulando as miniaturas em `bag`. */
+  function wirePaste(inputEl, shotsEl, bag) {
+    if (!inputEl) return;
+    inputEl.addEventListener('paste', function (e) {
+      var items = (e.clipboardData && e.clipboardData.items) || [];
+      var found = false;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.indexOf('image/') === 0) {
+          var blob = items[i].getAsFile();
+          if (!blob) continue;
+          found = true;
+          shrinkImage(blob).then(function (dataUri) {
+            bag.push(dataUri);
+            renderShots(shotsEl, bag);
+            announce('Imagem anexada ao comentário');
+          }).catch(function () { announce('Não foi possível ler a imagem colada'); });
+        }
+      }
+      if (found) e.preventDefault();   // não colar o caminho/markup junto
+    });
+  }
+
+  function renderShots(shotsEl, bag) {
+    if (!shotsEl) return;
+    shotsEl.textContent = '';
+    bag.forEach(function (src, idx) {
+      var chip = document.createElement('div');
+      chip.className = 'shot-chip';
+      var img = document.createElement('img');
+      img.src = src;
+      img.alt = 'Anexo ' + (idx + 1);
+      var rm = document.createElement('button');
+      rm.type = 'button';
+      rm.textContent = '×';
+      rm.title = 'Remover anexo';
+      rm.addEventListener('click', function () {
+        bag.splice(idx, 1);
+        renderShots(shotsEl, bag);
+      });
+      chip.appendChild(img);
+      chip.appendChild(rm);
+      shotsEl.appendChild(chip);
+    });
+  }
+
+  function wireDiscussion(host) {
+    var discussion = host.querySelector('.discussion');
+    if (!discussion) return;
+    var composer = discussion.querySelector('.composer');
+    var newBtn = discussion.querySelector('.new-thread-btn');
+    if (!composer || !newBtn) return;
+
+    // sacola de imagens deste composer
+    composer._shots = [];
+    wirePaste(composer.querySelector('.composer-text'), composer.querySelector('.composer-shots'), composer._shots);
+
+    newBtn.addEventListener('click', function () { openComposerOn(host, null); });
+    composer.querySelector('.composer-cancel').addEventListener('click', function () {
+      composer.classList.remove('open');
+      composer._shots.length = 0;
+      renderShots(composer.querySelector('.composer-shots'), composer._shots);
+    });
+    composer.querySelector('.composer-submit').addEventListener('click', function () { submitThread(host, composer); });
+  }
+
+  function openComposerOn(host, line) {
+    var composer = host.querySelector('.composer');
+    if (!composer) return;
+    composer.dataset.line = line || '';
+    var isReview = host.getAttribute('data-scope') === 'review';
+    composer.querySelector('.composer-target').textContent = line
+      ? ('Novo comentário · linha ' + line)
+      : (isReview ? 'Novo comentário geral do review' : 'Novo comentário · arquivo geral');
+    composer.classList.add('open');
+    composer.querySelector('.composer-text').focus();
+    composer.scrollIntoView({ block: 'nearest' });
+  }
+
+  /**
+   * Clique na linha abre a caixa ANCORADA NA LINHA (modelo GitLab), não no pé
+   * do card. Comentar sobre a linha 200 e escrever numa caixa a 300 linhas de
+   * distância obriga o revisor a guardar o contexto na cabeça.
+   */
+  function openComposer(patchId, line) {
+    var host = document.getElementById(patchId);
+    if (!host) return;
+    if (line == null || line === '') { openComposerOn(host, null); return; }
+
+    var after = anchorFor(host, parseInt(line, 10));
+    if (!after) { openComposerOn(host, line); return; }   // linha não visível: cai no pé
+
+    closeInlineComposer();
+
+    var slot = document.createElement('div');
+    slot.className = 'inline-slot';
+    slot.dataset.line = line;
+
+    var anchor = document.createElement('div');
+    anchor.className = 'inline-anchor';
+    anchor.innerHTML = 'novo comentário na linha <b>' + line + '</b>';
+    slot.appendChild(anchor);
+
+    // clona o composer do card para herdar markup e estilo, e liga os eventos
+    var tpl = host.querySelector('.discussion .composer');
+    if (!tpl) return;
+    var c = tpl.cloneNode(true);
+    c.classList.add('open');
+    c.dataset.line = line;
+    c.dataset.inline = '1';
+    c._shots = [];
+    var text = c.querySelector('.composer-text');
+    if (text) text.value = '';
+    var target = c.querySelector('.composer-target');
+    if (target) target.textContent = 'Comentando a linha ' + line;
+    var shotsEl = c.querySelector('.composer-shots');
+    if (shotsEl) shotsEl.textContent = '';
+    wirePaste(text, shotsEl, c._shots);
+    c.querySelector('.composer-cancel').addEventListener('click', closeInlineComposer);
+    c.querySelector('.composer-submit').addEventListener('click', function () {
+      submitThread(host, c);
+      closeInlineComposer();
+    });
+
+    slot.appendChild(c);
+    after.parentNode.insertBefore(slot, after.nextSibling);
+    if (text) text.focus();
+    slot.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  function closeInlineComposer() {
+    document.querySelectorAll('.inline-slot .composer[data-inline]').forEach(function (c) {
+      var slot = c.closest('.inline-slot');
+      if (slot && !slot.querySelector('.thread')) slot.remove();
+      else c.remove();
+    });
+  }
+
+  function submitThread(host, composer) {
+    var textEl = composer.querySelector('.composer-text');
+    var text = textEl.value.trim();
+    var shots = (composer._shots || []).slice();
+    if (!text && !shots.length) return;   // imagem sozinha também vale
+
+    var lineRaw = composer.dataset.line;
+    var line = lineRaw ? parseInt(lineRaw, 10) : null;
+    var t = {
+      id: newId(),
+      file: hostKeyOf(host),
+      line: line,
+      status: 'aberto',
+      msgs: [{ role: 'human', at: nowIso(), text: text, images: shots }]
+    };
+
+    // Guarda o texto da linha AGORA: é o que permite detectar depois que o
+    // código mudou e o comentário perdeu o referente.
+    if (line != null) {
+      var key = host.getAttribute('data-file-key');
+      var lines = key && FILES[key];
+      if (lines && lines[line - 1] != null) t.lineText = lines[line - 1];
+    }
+
+    store.threads.push(t);
+
+    textEl.value = '';
+    composer._shots.length = 0;
+    renderShots(composer.querySelector('.composer-shots'), composer._shots);
+    if (!composer.dataset.inline) composer.classList.remove('open');
+    scheduleSave();
+    renderThreads();
+    announce('Comentário adicionado em ' +
+      (t.line != null ? 'linha ' + t.line : 'escopo geral') +
+      (host.getAttribute('data-path') ? ' de ' + host.getAttribute('data-path') : '') +
+      ' — thread ' + t.id);
+  }
+
+  // ---- Exportar (fallback quando não há como salvar) -----------------
+
+  function copyThreads() {
+    // As imagens ficam FORA do JSON copiado. Um data URI base64 é inútil aqui:
+    // não é colável na prática (centenas de KB) e o agente não "vê" a imagem —
+    // recebe só texto. Vai a contagem; a imagem em si você cola direto no chat.
+    var omitted = 0;
+    var lean = {
+      v: store.v,
+      threads: store.threads.map(function (t) {
+        return {
+          id: t.id, file: t.file, line: t.line, lineText: t.lineText, status: t.status, statusAt: t.statusAt,
+          msgs: (t.msgs || []).map(function (m) {
+            var out = { role: m.role, at: m.at, text: m.text };
+            if (m.images && m.images.length) {
+              omitted += m.images.length;
+              out.images = m.images.length + ' imagem(ns) anexada(s) — colar no chat';
+            }
+            return out;
+          })
+        };
+      })
+    };
+    var json = JSON.stringify(lean, null, 2);
+    var done = function () {
+      var msg = 'Cole na sessão do Claude Code.';
+      if (omitted) msg += ' Imagens não vão no JSON — cole cada uma direto no chat.';
+      showToast('JSON das threads copiado', msg, omitted ? 9000 : 6000);
+      announce(msg);
+      setSaveState(saveState, 'JSON copiado.');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(json).then(done, fallback);
+    } else { fallback(); }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = json;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { window.prompt('Copie o JSON das threads:', json); }
+      document.body.removeChild(ta);
+    }
+  }
+
+  var copyBtn = document.getElementById('tb-copy-threads');
+  if (copyBtn) copyBtn.addEventListener('click', copyThreads);
+
+  // ---- Boot ---------------------------------------------------------
+
+  document.querySelectorAll('.patch, .review-summary').forEach(wireDiscussion);
+  replies = loadAgentReplies();
+
+  // ===== (1) Índice de threads: listar, navegar, colapsar =====
+
+  function threadPreview(t) {
+    var first = (t.msgs || [])[0];
+    var txt = (first && first.text) || '';
+    if (!txt && first && first.images && first.images.length) txt = '(imagem)';
+    return txt.replace(/\s+/g, ' ').slice(0, 70) || '(vazio)';
+  }
+
+  function answeredByAgent(t) {
+    return replies.some(function (r) { return r.threadId === t.id; });
+  }
+
+  /** Rola até a thread onde ela estiver — inline no diff ou no pé do card. */
+  function gotoThread(id) {
+    var el = document.querySelector('.thread[data-thread-id="' + id + '"]');
+    if (!el) {
+      // pode estar escondida pelo filtro de status
+      threadFilter = 'all';
+      applyThreadFilter();
+      el = document.querySelector('.thread[data-thread-id="' + id + '"]');
+    }
+    if (!el) { announce('Thread ' + id + ' não está visível neste modo'); return; }
+    var host = el.closest('.patch');
+    if (host && host.classList.contains('collapsed')) setCollapsed(host, false);
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    document.querySelectorAll('.jump-target').forEach(function (e) { e.classList.remove('jump-target'); });
+    void el.offsetWidth;
+    el.classList.add('jump-target');
+  }
+
+  // Navegação entre threads, na ordem em que aparecem na página.
+  var threadNav = { idx: -1 };
+
+  function visibleThreads() {
+    return Array.prototype.slice.call(document.querySelectorAll('.thread[data-thread-id]'))
+      .filter(function (el) { return !el.hidden; });
+  }
+
+  function gotoThreadRel(step) {
+    var list = visibleThreads();
+    if (!list.length) { announce('Nenhuma thread para navegar'); return; }
+    threadNav.idx = (threadNav.idx + step + list.length) % list.length;
+    var el = list[threadNav.idx];
+    var host = el.closest('.patch');
+    if (host && host.classList.contains('collapsed')) setCollapsed(host, false);
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    document.querySelectorAll('.jump-target').forEach(function (e) { e.classList.remove('jump-target'); });
+    void el.offsetWidth;
+    el.classList.add('jump-target');
+    announce('Thread ' + (threadNav.idx + 1) + ' de ' + list.length);
+  }
+
+  function updateThreadNav() {
+    var n = visibleThreads().length;
+    [['tb-prev-thread', 'Thread anterior'], ['tb-next-thread', 'Próxima thread']].forEach(function (pair) {
+      var b = document.getElementById(pair[0]);
+      if (!b) return;
+      b.disabled = n === 0;
+      b.title = pair[1] + (n ? ' (' + n + ')' : ' — nenhuma');
+    });
+  }
+
+  (function () {
+    var pv = document.getElementById('tb-prev-thread');
+    var nx = document.getElementById('tb-next-thread');
+    if (pv) pv.addEventListener('click', function () { gotoThreadRel(-1); });
+    if (nx) nx.addEventListener('click', function () { gotoThreadRel(1); });
+  })();
+
+  function renderThreadIndex() {
+    var box = document.getElementById('thread-index');
+    if (!box) return;
+    box.textContent = '';
+
+    // O índice é a lista do que está À VISTA. Ignorar o filtro fazia o dropdown
+    // listar as 8 resolvidas enquanto o rótulo dizia "Abertas (0)".
+    // threadFilter é declarado abaixo desta função; se o boot chamar o índice antes
+    // daquela linha executar, o hoisting entrega undefined. Sem o "|| 'all'" a lista
+    // sairia VAZIA em silêncio — a falha não daria erro nenhum.
+    var f = threadFilter || 'all';
+    var lista = store.threads.filter(function (t) {
+      return f === 'all' || statusOf(t) === f;
+    });
+
+    if (!lista.length) {
+      var vazio = document.createElement('p');
+      vazio.className = 'ti-empty';
+      vazio.textContent = f === 'all'
+        ? 'Nenhuma thread ainda.'
+        : 'Nenhuma thread ' + filterName(f) + '.';
+      box.appendChild(vazio);
+      return;
+    }
+
+    lista.sort(function (a, b) {
+      return String(a.file).localeCompare(String(b.file)) ||
+             ((anchorLineOf(a) == null ? -1 : anchorLineOf(a)) - (anchorLineOf(b) == null ? -1 : anchorLineOf(b)));
+    }).forEach(function (t) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ti-item';
+      b.dataset.threadId = t.id;
+      if (answeredByAgent(t)) b.dataset.answered = '1';
+
+      var dot = document.createElement('span');
+      dot.className = 'ti-dot';
+      dot.dataset.status = statusOf(t);
+      b.appendChild(dot);
+
+      var wrap = document.createElement('span');
+      wrap.className = 'ti-text';
+      var where = document.createElement('span');
+      where.className = 'ti-where';
+      var name = t.file === '__review__' ? 'review geral' : String(t.file).split('/').pop();
+      // linha efetiva: onde a thread ESTÁ, não onde nasceu (ver anchorLineOf)
+      var at = anchorLineOf(t);
+      where.textContent = name + (at != null ? ':' + at : '');
+      var prev = document.createElement('span');
+      prev.className = 'ti-preview';
+      prev.textContent = threadPreview(t);
+      wrap.appendChild(where);
+      wrap.appendChild(prev);
+      b.appendChild(wrap);
+
+      if (answeredByAgent(t)) {
+        var tag = document.createElement('span');
+        tag.className = 'ti-badge';
+        tag.textContent = '↩';
+        tag.title = 'respondida pelo agente';
+        b.appendChild(tag);
+      }
+
+      b.addEventListener('click', function () { closeMenus(); gotoThread(t.id); });
+      box.appendChild(b);
+    });
+  }
+
+  // ===== Filtro de threads por status =====
+
+  var threadFilter = 'all';
+
+  function filterName(f) {
+    // literal dentro da função: um objeto em `var` teria o mesmo problema de ordem
+    // que o threadFilter, e este texto aparece na UI.
+    return ({ all: 'todas', aberto: 'abertas', respondido: 'respondidas', resolvido: 'resolvidas' })[f] || f;
+  }
+
+  function statusCounts() {
+    var c = { all: store.threads.length, aberto: 0, respondido: 0, resolvido: 0 };
+    store.threads.forEach(function (t) {
+      var s = statusOf(t);
+      if (c[s] != null) c[s]++;
+    });
+    return c;
+  }
+
+  /** Aplica o filtro: esconde threads fora do status e cards que sobraram sem thread. */
+  function applyThreadFilter() {
+    var counts = statusCounts();
+
+    document.querySelectorAll('#tb-thread-menu .mi-count').forEach(function (el) {
+      el.textContent = counts[el.getAttribute('data-count')] || 0;
+    });
+    document.querySelectorAll('#tb-thread-menu button').forEach(function (b) {
+      b.setAttribute('aria-checked', b.getAttribute('data-tf') === threadFilter ? 'true' : 'false');
+    });
+    var label = document.getElementById('tb-thread-label');
+    if (label) {
+      var names = { all: 'Threads', aberto: 'Abertas', respondido: 'Respondidas', resolvido: 'Resolvidas' };
+      label.textContent = names[threadFilter] + (threadFilter === 'all' ? '' : ' (' + counts[threadFilter] + ')');
+      renderThreadIndex();   // o índice mostra o que o filtro deixou à vista
+    }
+
+    // DESIGN: o filtro de threads filtra THREADS, nunca o diff. Antes ele fazia
+    // host.hidden nos cards sem thread do status — com "Abertas (0)" isso escondia
+    // os 6 arquivos e a página parecia quebrada. Quem quer esconder arquivo usa
+    // colapsar; quem filtra thread quer o diff no lugar.
+    var shownThreads = 0;
+    document.querySelectorAll('.patch, .review-summary').forEach(function (host) {
+      host.hidden = false;
+      host.querySelectorAll('.thread').forEach(function (el) {
+        var t = store.threads.filter(function (x) { return x.id === el.dataset.threadId; })[0];
+        var show = threadFilter === 'all' || (t && statusOf(t) === threadFilter);
+        el.hidden = !show;
+        if (show) shownThreads++;
+      });
+      // Slot inline sem thread visível não deve deixar a moldura vazia no diff.
+      host.querySelectorAll('.inline-slot').forEach(function (slot) {
+        var vivos = slot.querySelectorAll('.thread:not([hidden])').length;
+        slot.hidden = vivos === 0;
+      });
+    });
+
+    var note = document.getElementById('filter-note');
+    if (note) {
+      note.hidden = threadFilter === 'all';
+      var txt = document.getElementById('filter-note-text');
+      if (txt) {
+        txt.textContent = shownThreads === 0
+          ? 'Nenhuma thread ' + filterName(threadFilter) + ' — as outras estão ocultas, e os diffs seguem visíveis.'
+          : 'Mostrando só as ' + shownThreads + ' thread' + (shownThreads === 1 ? '' : 's') +
+            ' ' + filterName(threadFilter) + '. Os diffs seguem visíveis.';
+      }
+    }
+    return { shown: shownThreads };
+  }
+
+  (function () {
+    var btn = document.getElementById('tb-thread-btn');
+    var menu = document.getElementById('tb-thread-menu');
+    if (!btn || !menu) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = menu.classList.contains('open');
+      closeMenus();
+      if (!open) { menu.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); }
+    });
+    menu.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-tf]');
+      if (!b) return;
+      threadFilter = b.getAttribute('data-tf');
+      closeMenus();
+      var res = applyThreadFilter();
+      var nome = { all: 'todas as threads', aberto: 'abertas', respondido: 'respondidas', resolvido: 'resolvidas' }[threadFilter];
+      if (threadFilter === 'all') showToast('Filtro removido', 'Mostrando todas as threads.', 4000);
+      else if (res.shown === 0) showToast('Nenhuma thread ' + nome,
+        'O filtro não esconde os diffs — eles continuam à vista.', 5000);
+      else showToast('Filtrando: ' + nome,
+        res.shown + (res.shown === 1 ? ' thread à vista' : ' threads à vista') + '.', 5000);
+      announce('Filtro de threads: ' + nome);
+    });
+  })();
+
+  // ===== Expandir / colapsar =====
+
+  function setCollapsed(host, on) {
+    host.classList.toggle('collapsed', on);
+    var btn = host.querySelector('.patch-collapse');
+    if (btn) {
+      btn.textContent = on ? '▸' : '▾';
+      btn.title = on ? 'Expandir' : 'Colapsar';
+      btn.setAttribute('aria-expanded', on ? 'false' : 'true');
+    }
+  }
+
+  function collapseAll(on) {
+    var n = 0;
+    document.querySelectorAll('.patch').forEach(function (p) { setCollapsed(p, on); n++; });
+    announce((on ? 'Colapsados ' : 'Expandidos ') + n + ' diffs');
+  }
+
+  (function () {
+    // botão de colapso em cada card, à esquerda do path
+    document.querySelectorAll('.patch').forEach(function (p) {
+      var head = p.querySelector('.patch-path');
+      if (!head) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'patch-collapse';
+      btn.textContent = '▾';
+      btn.title = 'Colapsar';
+      btn.setAttribute('aria-expanded', 'true');
+      btn.addEventListener('click', function () { setCollapsed(p, !p.classList.contains('collapsed')); });
+      head.insertBefore(btn, head.firstChild);
+    });
+    var ca = document.getElementById('tb-collapse-all');
+    var ea = document.getElementById('tb-expand-all');
+    if (ca) ca.addEventListener('click', function () { collapseAll(true); });
+    if (ea) ea.addEventListener('click', function () { collapseAll(false); });
+    var clear = document.getElementById('filter-note-clear');
+    if (clear) clear.addEventListener('click', function () {
+      threadFilter = 'all';
+      applyThreadFilter();
+      announce('Filtro removido');
+    });
+  })();
+
+  // ===== (2) Realce do arquivo em visualização =====
+  //
+  // Observa os cards e destaca, na nav lateral, o que está sendo lido. Usa a
+  // faixa logo abaixo da barra fixa como referência — o topo da viewport está
+  // coberto por ela, e marcar o card escondido atrás confundiria.
+  (function () {
+   try {
+    var links = {};
+    document.querySelectorAll('.filenav a[href^="#file-"]').forEach(function (a) {
+      links[a.getAttribute('href').slice(1)] = a;
+    });
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.patch[id]'));
+    if (!cards.length || !('IntersectionObserver' in window)) return;
+
+    var visible = {};
+    var current = null;
+
+    function pick() {
+      // entre os visíveis, o que está mais alto na página
+      var best = null;
+      cards.forEach(function (c) {
+        if (!visible[c.id]) return;
+        if (!best || c.getBoundingClientRect().top < best.getBoundingClientRect().top) best = c;
+      });
+      if (!best || best.id === current) return;
+      if (current) {
+        if (links[current]) links[current].classList.remove('current');
+        var prev = document.getElementById(current);
+        if (prev) prev.classList.remove('current');
+      }
+      current = best.id;
+      if (links[current]) links[current].classList.add('current');
+      best.classList.add('current');
+    }
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { visible[e.target.id] = e.isIntersecting; });
+      pick();
+    }, { rootMargin: '-88px 0px -55% 0px', threshold: 0 });   // px/%: rem é inválido aqui
+
+    cards.forEach(function (c) { io.observe(c); });
+   } catch (e) {
+    // Realce de arquivo é enfeite: se falhar, a página continua funcionando.
+    // Sem este catch, um erro aqui abortava o boot inteiro — foi o que
+    // aconteceu com rootMargin em rem: sumiram threads e o expand parou.
+    if (window.console) console.warn('scroll spy desativado:', e.message);
+   }
+  })();
+
+  // Sombra na barra só quando ela está realmente colada no topo.
+  (function () {
+    var bar = document.querySelector('.toolbar-bar');
+    if (!bar || !('IntersectionObserver' in window)) return;
+    var sentinel = document.createElement('div');
+    sentinel.style.cssText = 'position:absolute;top:0;height:1px;width:1px;';
+    bar.parentNode.insertBefore(sentinel, bar);
+    new IntersectionObserver(function (entries) {
+      bar.classList.toggle('stuck', !entries[0].isIntersecting);
+    }, { threshold: 0 }).observe(sentinel);
+  })();
+
+  applyPrefs();
+  renderAllDiffs();
+  // De novo APÓS o render: a contagem de blocos navegáveis depende do DOM já
+  // construído. Na ordem anterior os botões ↑↓ nasciam desabilitados e nunca
+  // voltavam, porque nada reavaliava depois.
+  applyPrefs();
+
+  hydrate(false).then(function () {
+    autoRevealAll();      // contexto aberto antes de ancorar: nada cai no pé
+    renderThreads();
+    if (window.claude && typeof window.claude.use === 'function') {
+      window.claude.use('artifact').then(function (api) {
+        artifactApi = api;
+        setSaveState(api ? 'idle' : 'local',
+          api ? '' : 'Sem permissão de escrita nesta visualização; use "copiar threads".');
+      }).catch(function () { setSaveState('local'); });
+    } else {
+      setSaveState('local', 'Runtime de artefato indisponível; as threads ficam nesta aba.');
+    }
+    if (replies.length) announce(replies.length + ' resposta(s) do agente carregada(s)');
+  });
+})();
+</script>
