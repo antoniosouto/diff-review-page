@@ -3,7 +3,7 @@ name: diff-review-page
 description: |
   Monta uma página de code review navegável (HTML autocontido) a partir de alterações git — working tree, staged, um commit, range ou branch — com diff inline/lado a lado, expandir contexto, arquivo inteiro, busca no código, rich diff de Markdown e threads de comentário por linha.
   Use quando eu pedir "revisar as alterações", "página de review", "ver o diff", "revisar o que os agentes fizeram", "montar review", "diff review", "revisar antes do commit", ou quando eu quiser inspecionar visualmente mudanças (comitadas ou não).
-  Do NOT use for: revisão textual do código em prosa sem página (responda direto no chat), auditoria de qualidade de código (use code-reviewer), verificação estrutural de um plugin de squad (use a selfcheck do squad).
+  Do NOT use for: revisão textual do código em prosa sem página (responda direto no chat), auditoria de qualidade de código (use code-reviewer).
 metadata:
   version: 1.3.1
 allowed-tools: Read, Grep, Glob, Bash, Edit, Artifact
@@ -36,7 +36,7 @@ o resto do diretório — e ao final confere que o gerador passa em `node --chec
 manteve seus pontos de injeção. Sem terminal interativo exige alvo explícito e `--force` para
 sobrescrever, em vez de pendurar uma pergunta.
 
-Gera um HTML autocontido (sem CDN, sem dependências) com as features de revisão do
+Gera um HTML autocontido (sem dependências de runtime; a fonte IBM Plex vem do Google Fonts, com fallback para a fonte do sistema) com as features de revisão do
 GitHub/Azure DevOps: inline · lado a lado · modified content, expandir contexto acima/abaixo,
 arquivo inteiro, busca no código, whitespace visível, word wrap, rich diff de Markdown,
 navegação entre diferenças e threads de comentário por linha ou gerais.
@@ -200,16 +200,16 @@ commit ou intervalo.
 | `status` | `resolvido` (tratado), `respondido` (respondi mas depende dele), ou omita |
 
 ⚠ **`action` sem número de linha não cumpre a função do campo.** Ele existe para o revisor
-achar a mudança sem procurar. Escrevi `SQUAD-DNA.md §8: nota sobre reconciliação` num
+achar a mudança sem procurar. Escrevi `ARQUITETURA.md §8: nota sobre reconciliação` num
 documento de 1600 linhas e o revisor teve de perguntar onde estava — citar a seção não
 resolve num arquivo grande, e "§8" pode cobrir centenas de linhas.
 
 O formato certo, e vale para prosa igual a código:
 
 ```
-"action": "adicionado · SQUAD-DNA.md:1378-1383 · nota sobre reconciliação embutida"
+"action": "adicionado · ARQUITETURA.md:1378-1383 · nota sobre reconciliação embutida"
 "action": "corrigido · src/app/fatura.service.ts:23-34 · autorização antes do POST"
-"action": "criado · scripts/migrate-squad-state.js (195 linhas)"
+"action": "criado · scripts/migrate-state.js (195 linhas)"
 ```
 
 Levante o número **depois** de editar (as linhas mudam com a própria edição) e confira com
